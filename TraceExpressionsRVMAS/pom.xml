@@ -3,4 +3,33 @@
   <groupId>it.unige.dibris</groupId>
   <artifactId>TraceExpressionsRVMAS</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+		<dependency>
+		    <groupId>com.tilab.jade</groupId>
+		    <artifactId>jade</artifactId>
+		    <version>4.4.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>jpl</groupId>
+		    <artifactId>jpl</artifactId>
+		    <version>7.0.1</version>
+		</dependency>
+  </dependencies>
+  <repositories>
+ 	<repository>
+	    <id>com.springsource.repository.bundles.release</id>
+	    <name>SpringSource Enterprise Bundle Repository - SpringSource Bundle Releases</name>
+	    <url>http://repository.springsource.com/maven/bundles/release</url>
+	</repository>
+	<repository>
+	    <id>com.springsource.repository.bundles.external</id>
+	    <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+	    <url>http://repository.springsource.com/maven/bundles/external</url>
+	</repository>
+	<repository>
+		<id>Jade</id>
+		<name>Jade</name>
+		<url>http://jade.tilab.com/maven/</url>
+	</repository>
+  </repositories>
 </project>
