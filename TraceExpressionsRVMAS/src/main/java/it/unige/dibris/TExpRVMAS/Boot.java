@@ -31,8 +31,13 @@ import jade.wrapper.StaleProxyException;
 
 public class Boot {
 
+	private String swipl;
+	private String tExpPath;
+	
+	private Boot(){}
+
 	/**
-	 * Executes the TraceExpressionRVMAS
+	 * It executes the TraceExpressionRVMAS
 	 * 
 	 * @param args 
 	 * trace expression file containing the protocol to verify, and a list of JADE agents to execute/monitor 
@@ -45,36 +50,11 @@ public class Boot {
 		args[0] = "/Users/angeloferrando/Desktop/trace_expression.texp";
 		args[1] = "alice:alt_bit.Sender(bob,msg1,5000);bob:alt_bit.Receiver(alice,ack1);charlie:alt_bit.Sender(david,msg2,10000);david:alt_bit.Receiver(charlie,ack2)";
 		
-		/* The arguments must be at least 2, the trace expression file and one (or more) agent(s) */
-		if(args.length != 2){
-			throw new IllegalArgumentException("Too few arguments: expected <path_to_trace_expression_file> <jade-agent1>;...;<jade-agentN>");
-		}
-		
-		/* Retrieve the SWI_LIB environment variable */
-		String swipl = System.getenv("SWI_LIB");
-		
-		/* If it does not exist an exception is thrown */
-		if(swipl == null){
-			throw new EnvironmentVariableNotDefined("SWI_LIB environment variable not defined");
-		}
-		
-		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
-		try{
-			addLibraryPath(swipl);
-		} catch(Exception e){
-			throw new JavaLibraryPathException("An error occured during the user path retrieval information process", e);
-		}
-		
-		/* Now we check only if the file exists. 
-		 * TO-DO To check if the file is syntactically and semantically correct */
-		String tExpPath = args[0];
-		File tExpFile = new File(tExpPath);
-		if(!tExpFile.exists()){ 
-		    throw new FileNotFoundException(tExpPath + " file not found");
-		}
+		/* Parsing arguments */
+		Boot boot = Boot.parseArguments(args);
 		
 		/* SWI-Prolog environment initialization (transition system, DecAMon, current trace expression) */
-		JPLInitializer.init(tExpPath);
+		JPLInitializer.init(boot.tExpPath);
 		
 		/* Initialize JADE environment */
 		jade.core.Runtime runtime = jade.core.Runtime.instance();
@@ -92,7 +72,6 @@ public class Boot {
 		projectionSet.add(centralizedP);
 		for(String agent : agentsargs){
 			String name = agent.split(":")[0];
-			//projectionSet += name + ",";
 			centralizedP.add(name);
 			String constructor = agent.split(":")[1];
 			if(!constructor.contains("(") || !constructor.contains(")")){
@@ -114,6 +93,38 @@ public class Boot {
 		
 		/* Set to close the JVM when JADE environment ends */
 		jade.core.Runtime.instance().setCloseVM(true);		
+	}
+	
+	private static Boot parseArguments(String[] args) throws FileNotFoundException{
+		Boot boot = new Boot();
+		/* The arguments must be at least 2, the trace expression file and one (or more) agent(s) */
+		if(args.length != 2){
+			throw new IllegalArgumentException("Too few arguments: expected <path_to_trace_expression_file> <jade-agent1>;...;<jade-agentN>");
+		}
+		
+		/* Retrieve the SWI_LIB environment variable */
+		boot.swipl = System.getenv("SWI_LIB");
+		
+		/* If it does not exist an exception is thrown */
+		if(boot.swipl == null){
+			throw new EnvironmentVariableNotDefined("SWI_LIB environment variable not defined");
+		}
+		
+		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
+		try{
+			addLibraryPath(boot.swipl);
+		} catch(Exception e){
+			throw new JavaLibraryPathException("An error occured during the user path retrieval information process", e);
+		}
+		
+		/* Now we check only if the file exists. 
+		 * TO-DO To check if the file is syntactically and semantically correct */
+		boot.tExpPath = args[0];
+		File tExpFile = new File(boot.tExpPath);
+		if(!tExpFile.exists()){ 
+		    throw new FileNotFoundException(boot.tExpPath + " file not found");
+		}
+		return boot;
 	}
 	
 	public static void runMonitors(AgentContainer container, Partition<String> p){
