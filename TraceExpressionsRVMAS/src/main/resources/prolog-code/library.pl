@@ -1,4 +1,3 @@
-
 :- use_module(library(assoc)).
 :- use_module(library(coinduction)).
 :- coinductive substitution_aux/3.
@@ -230,48 +229,127 @@ accept(N,T1,[E|L],T3) :-
   accept(M,T2,L,T3).
 
 
+/* ************************************************************************** */
+/* 							DYNAMIC PROJECTION				 			      */
+/* ************************************************************************** */
+
+project(T, ProjectedAgents, ProjectedType) :-
+	empty_assoc(A),
+	project(A, 0, -1, T, ProjectedAgents, ProjectedType).
+
+project(_Assoc, _Depth, _DeepestSeq, epsilon, _ProjectedAgents, epsilon):- !.
+
+project(Assoc, _Depth, DeepestSeq, Type, _ProjectedAgents, ProjectedType) :-
+get_assoc(Type,Assoc,(AssocProjType,LoopDepth)),!,(LoopDepth =< DeepestSeq -> ProjectedType=AssocProjType; ProjectedType=epsilon).
+/*
+project(Assoc, Depth, DeepestSeq, (IntType:Type1), ProjectedAgents, ProjectedType) :-
+IntType \= (_, _),
+!,
+put_assoc((IntType:Type1),Assoc,(ProjectedType,Depth),NewAssoc),
+(involves(IntType, ProjectedAgents) ->
+    IncDepth is Depth+1,project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType:ProjectedType1);
+    project(NewAssoc,Depth,DeepestSeq,Type1,ProjectedAgents,ProjectedType)).
+*/
+project(Assoc, Depth, DeepestSeq, (IntType:Type1), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((IntType:Type1),Assoc,(ProjectedType,Depth),NewAssoc),
+(involves(IntType, ProjectedAgents) ->
+    IncDepth is Depth+1,project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType:ProjectedType1);
+    project(NewAssoc,Depth,DeepestSeq,Type1,ProjectedAgents,ProjectedType)).
+
+project(Assoc, Depth, DeepestSeq, (Type1|Type2), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((Type1|Type2),Assoc,(ProjectedType,Depth),NewAssoc),
+IncDepth is Depth+1,
+project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+ProjectedType=(ProjectedType1|ProjectedType2).
+
+project(Assoc, Depth, DeepestSeq, (Type1\/Type2), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((Type1\/Type2),Assoc,(ProjectedType,Depth),NewAssoc),
+IncDepth is Depth+1,
+project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+ProjectedType=(ProjectedType1\/ProjectedType2).
+
+project(Assoc, Depth, DeepestSeq, (Type1/\Type2), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((Type1/\Type2),Assoc,(ProjectedType,Depth),NewAssoc),
+IncDepth is Depth+1,
+project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+ProjectedType=(ProjectedType1/\ProjectedType2).
+
+project(Assoc, Depth, DeepestSeq, (Type1*Type2), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((Type1*Type2),Assoc,(ProjectedType,Depth),NewAssoc),
+IncDepth is Depth+1,
+project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+ProjectedType=(ProjectedType1*ProjectedType2).
+
+project(Assoc, Depth, _DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc((IntType>>Type1),Assoc,(ProjectedType,Depth),NewAssoc),
+%(involves(IntType, ProjectedAgents) ->
+IncDepth is Depth+1,
+project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
+
+/****************************************************************************/
+/* 	  INVOLVES PREDICATE: can be redefined to consider agent roles      */
+/****************************************************************************/
+
+involves(IntType, List) :-
+match(Message, IntType),
+Message =.. [msg, performative(_P), sender(Sender), receiver(Receiver) | _T],
+(member(Sender, List);
+member(Receiver, List)).
+
+
 /****************************************************************************/
 /* 	  		PREDICATES FOR REAL MONITORING   		    */
 /****************************************************************************/
 
+
+
+initialize(LogFileName, MonitorID, Agents) :-
 % The argument of diff (milliseconds after which we assume that a message is "old" enough, and no older messages will arrive after) should be the same used by the progress agent to call the "progress" goal
-diff(0).
+recorda(MonitorID, diff(0)),
+trace_expression(T),
+project(T, Agents, ProjectedType),
+clean_and_record(MonitorID, current_state(ProjectedType)),
+clean_and_record(MonitorID, message_list([])),
+open(LogFileName,append,Str),
+recorda(MonitorID, str(Str)),
+recorda(MonitorID, agents(Agents)),
+write_log(MonitorID, 'Monitoring protocol\n'), write_log(MonitorID, ProjectedType),
+write_log(MonitorID,'\n\n'), !.
 
-initialize(LogFileName, Agents) :-
-  trace_expression(T),
-  clean_and_record(1, current_state(T)),
-  clean_and_assert(message_list([])),
-  open(LogFileName,append,Str),
-  assert(str(Str)),
-  assert(agents(Agents)),
-  write_log('Monitoring protocol\n'), write_log(T),
-  write_log('\n\n').
+remember(MonitorID, Message) :-
+Message =.. Message2List,
+last(Message2List, time-stamp(TS)),
+!,
+recorded(MonitorID, message_list(List), _),
+insert_in_order((TS, Message), List, NewList),
+clean_and_record(MonitorID, message_list(NewList)).
 
-remember(Message) :-
-  Message =.. Message2List,
-  last(Message2List, time-stamp(TS)),
-  !,
-  retract(message_list(List)),
-  insert_in_order((TS, Message), List, NewList),
-  assert(message_list(NewList)).
+remember(MonitorID, Message) :-
+recorded(MonitorID, message_list(List), _),
+append(List, [(z, Message)], NewList),
+clean_and_record(MonitorID, message_list(NewList)).
 
-remember(Message) :-
-  retract(message_list(List)),
-  append(List, [(z, Message)], NewList),
-  assert(message_list(NewList)).
+verify(MonitorID, _TS) :-
+  recorded(MonitorID, message_list([]), _), !,
+  recorded(MonitorID, diff(Diff), _),
+  write_log(MonitorID,'\n'), write_log(MonitorID,'*** NO MESSAGES EXCHANGED IN THE LAST '), write_log(MonitorID,Diff), write_log(MonitorID,' MILLISECONDS ***\n').
 
-verify(_TS) :-
-  message_list([]), !,
-  diff(Diff),
-  write_log('\n'), write_log('*** NO MESSAGES EXCHANGED IN THE LAST '), write_log(Diff), write_log(' MILLISECONDS ***\n').
-
-verify(TS) :-
-  message_list(Messages),
-  diff(Diff),
+verify(MonitorID, TS) :-
+  recorded(MonitorID, message_list(Messages), _),
+  recorded(MonitorID, diff(Diff), _),
   Max_TS is TS - Diff,
-  type_check_list(Messages, Max_TS, Remainder),
-  retract(message_list(Messages)),
-  assert(message_list(Remainder)).
+  type_check_list(MonitorID, Messages, Max_TS, Remainder),
+  clean_and_record(MonitorID, message_list(Remainder)).
 
 insert_in_order((TS, Message), [], [(TS, Message)]).
 
@@ -282,30 +360,30 @@ insert_in_order((TS, Message), [(TSH, MessageH)|Tail], [(TSH, MessageH)|OrderedL
 ((integer(TSH), TS >= TSH); TSH == z), insert_in_order((TS, Message), Tail, OrderedList).
 
 
-type_check_aux(Message) :-
-   recorded(1, current_state(LastState), Ref),
+type_check_aux(MonitorID, Message) :-
+   recorded(MonitorID, current_state(LastState), Ref),
    next(LastState, Message, NewState), !,
-   write_log('\n'), write_log('Message\n'), write_log(Message), write_log('\nleads from state \n'), write_log(LastState), write_log('\nto state\n'), write_log(NewState), write_log('\n'),
+   write_log(MonitorID,'\n'), write_log(MonitorID,'Message\n'), write_log(MonitorID,Message), write_log(MonitorID,'\nleads from state \n'), write_log(MonitorID,LastState), write_log(MonitorID,'\nto state\n'), write_log(MonitorID,NewState), write_log(MonitorID,'\n'),
    erase(Ref),
-   recorda(1, current_state(NewState)).
+   recorda(MonitorID, current_state(NewState)).
 
-type_check_aux(Message) :-
-recorded(1, current_state(LastState), Ref),
-write_log('\n'), write_log('*** DYNAMIC TYPE-CHECKING ERROR ***\nMessage '), write_log(Message), write_log(' cannot be accepted in the current state '), write_log(LastState), erase(Ref), fail.
+type_check_aux(MonitorID, Message) :-
+recorded(MonitorID, current_state(LastState), Ref),
+write_log(MonitorID,'\n'), write_log(MonitorID,'*** DYNAMIC TYPE-CHECKING ERROR ***\nMessage '), write_log(MonitorID,Message), write_log(MonitorID,' cannot be accepted in the current state '), write_log(MonitorID,LastState), erase(Ref), fail.
 
-type_check_list([], _Max_TS,  []).
+type_check_list(_, [], _Max_TS,  []).
 
-type_check_list([(z, Msg)|T], Max_TS, Remainder) :-
+type_check_list(MonitorID, [(z, Msg)|T], Max_TS, Remainder) :-
    !,
-   type_check_aux(Msg),
-   type_check_list(T, Max_TS, Remainder).
+   type_check_aux(MonitorID, Msg),
+   type_check_list(MonitorID, T, Max_TS, Remainder).
 
-type_check_list([(TS, Msg)|T], Max_TS, Remainder) :-
+type_check_list(MonitorID, [(TS, Msg)|T], Max_TS, Remainder) :-
    TS =< Max_TS, !,
-   type_check_aux(Msg),
-   type_check_list(T, Max_TS, Remainder).
+   type_check_aux(MonitorID, Msg),
+   type_check_list(MonitorID, T, Max_TS, Remainder).
 
-type_check_list(List, _Max_TS, List).
+type_check_list(_, List, _Max_TS, List).
 
 clean_and_record(Key, current_state(InitialState)) :-
    recorded(Key, current_state(_), Ref), !,
@@ -315,6 +393,14 @@ clean_and_record(Key, current_state(InitialState)) :-
 clean_and_record(Key, current_state(InitialState)) :-
    recorda(Key, current_state(InitialState)).
 
+clean_and_record(Key, message_list(L)) :-
+  recorded(Key, message_list(_), Ref), !,
+  erase(Ref),
+  recorda(Key, message_list(L)).
+
+clean_and_record(Key, message_list(L)) :-
+  recorda(Key, message_list(L)).
+
 clean_and_assert(message_list([])) :-
    retract(message_list(_)), !,
    assert(message_list([])).
@@ -322,4 +408,5 @@ clean_and_assert(message_list([])) :-
 clean_and_assert(message_list([])) :-
    assert(message_list([])).
 
-write_log(Content) :- str(Str), write(Str, Content), flush_output(Str), write(Content), flush_output.
+write_log(MonitorID, Content) :-
+  recorded(MonitorID, str(Str), _), write(Str, Content), flush_output(Str), write(Content), flush_output.

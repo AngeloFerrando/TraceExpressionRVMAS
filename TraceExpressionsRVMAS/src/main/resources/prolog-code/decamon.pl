@@ -62,62 +62,6 @@ decAMonJADE(MMsPartitions) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
-
-% next transition function (implements "delta" in the paper)
-next(ET:T,E,T) :- has_type(E,ET).
-next(T1\/_,E,T2) :- next(T1,E,T2).
-next(_\/T1,E,T2) :- !,next(T1,E,T2).
-next(T1|T2,E,T) :- next(T1,E,T3), fork(T3,T2,T).
-next(T1|T2,E,T) :- !,next(T2,E,T4), fork(T1,T4,T).
-next(T1*T2,E,T) :- next(T1,E,T3), concat(T3,T2,T).
-next(T1*T2,E,T3) :- !,may_halt(T1), next(T2,E,T3).
-next(T1 /\ T2,E,T) :- next(T1,E,T3), next(T2,E,T4), conj(T3,T4,T).  %%% conjunction
-next(ET >> T1, E, ET >> T2)  :- event(E),(has_type(E,ET) *-> next(T1,E,T2); T2=T1).
-
-% may_halt function (implements "empty" in the paper)
-may_halt(epsilon) :- !.
-may_halt(T1\/T2) :- (may_halt(T1), !; may_halt(T2)).
-may_halt(T1|T2) :- !, may_halt(T1), may_halt(T2).
-may_halt(T1*T2) :- !, may_halt(T1), may_halt(T2).
-may_halt(T1/\T2) :- !, may_halt(T1), may_halt(T2).
-may_halt(_>>T) :- !, may_halt(T).
-
-does_not_halt(_:_).
-does_not_halt(T1\/T2) :- !, does_not_halt(T1), does_not_halt(T2).
-does_not_halt(T1|T2) :- (does_not_halt(T1), !; does_not_halt(T2)).
-does_not_halt(T1*T2) :- (does_not_halt(T1), !; does_not_halt(T2)).
-does_not_halt(T1/\T2) :- (does_not_halt(T1), !; does_not_halt(T2)).
-does_not_halt(_>>T) :- !, does_not_halt(T).
-
-%%% optimization
-fork(epsilon, T, T) :- !.
-fork(T, epsilon, T) :- !.
-fork((T1l|T1r), T2, (T1l|(T1r|T2))) :- !.
-fork(T1, T2, (T1|T2)).
-
-concat(epsilon, T, T) :- !.
-concat(T, epsilon, T) :- !.
-concat((T1l*T1r), T2, T1l*(T1r*T2)) :- !.
-concat(T1, T2, T1*T2).
-
-conj(epsilon/\epsilon, epsilon) :- !.
-conj((T1l/\T1r), T2, T1l/\(T1r/\T2)) :- !.
-conj(T1, T2, T1/\T2).
-
-% may_halt predicate iterated on the trace expression
-% Example: T = msg1:epsilon, may_eventually_halt(T).
-% Example: T = msg1:T, not(may_eventually_halt(T)).
-may_eventually_halt(T) :-
-  empty_assoc(A),
-  may_eventually_halt(T, A).
-may_eventually_halt(T, A) :-
-  get_assoc(T, A, _), !, fail.
-may_eventually_halt(T, _) :- may_halt(T), !.
-may_eventually_halt(T, A) :-
-  put_assoc(T, A, _, A1),
-  next(T, _, T1), may_eventually_halt(T1, A1).
-
 % involved_type unifies the second argument with the set containing all agents involved
 % in the interaction type passed as first argument
 % Example: involved_type(msg1, [alice, bob]).
