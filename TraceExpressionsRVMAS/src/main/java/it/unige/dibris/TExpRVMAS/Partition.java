@@ -1,5 +1,6 @@
 package it.unige.dibris.TExpRVMAS;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +27,46 @@ public class Partition<T> implements Iterable<Set<T>>{
 				constraints.add(newConstraint);
 			}
 		}
+	}
+	
+	public <E extends T> void addElement(E elem){
+		for(Set<T> set : constraints){
+			if(set.contains(elem)){
+				return;
+			}
+		}
+		Set<T> newConstraint = new HashSet<T>();
+		newConstraint.add(elem);
+		constraints.add(newConstraint);
+	}
+	
+	public int getNumberSingletons(){
+		return getNumberConstraints(1);
+	}
+	
+
+	public int getNumberConstraints() {
+		return constraints.size();
+	}
+	
+	public int getNumberConstraints(int size){
+		int count = 0;
+		for(Set<T> set : constraints){
+			if(set.size() == size){
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	public int getNumberConstraints(int minSize, int maxSize){
+		int count = 0;
+		for(Set<T> set : constraints){
+			if(set.size() >= minSize && set.size() <= maxSize){
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	public boolean areMonitoredTogether(Set<? extends T> elem1, Set<? extends T> elem2){
