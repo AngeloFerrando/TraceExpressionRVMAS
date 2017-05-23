@@ -1,5 +1,6 @@
 package it.unige.dibris.utils.JPL;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,8 +18,8 @@ public class JPLInitializer {
 		JPL.setTraditional();
 		JPL.init();
 		
-		String pathToLibrary = "resources/prolog-code/library.pl";
-		String pathToDecAMon = "resources/prolog-code/decamon.pl";
+		String pathToLibrary = "./src/main/resources/prolog-code/library.pl";
+		String pathToDecAMon = "./src/main/resources/prolog-code/decamon.pl";
 		
 		JPLInitializer.createAndCheck("consult", new Atom(pathToLibrary));
 		JPLInitializer.createAndCheck("consult", new Atom(pathToDecAMon));
