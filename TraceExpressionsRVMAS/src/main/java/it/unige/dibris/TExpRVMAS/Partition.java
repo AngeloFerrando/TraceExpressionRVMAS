@@ -1,6 +1,7 @@
 package it.unige.dibris.TExpRVMAS;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -9,7 +10,7 @@ import java.util.Set;
  * @author angeloferrando
  *
  */
-public class Partition<T> {
+public class Partition<T> implements Iterable<Set<T>>{
 	private Set<Set<T>> constraints = new HashSet<>();
 	
 	public Partition(){}
@@ -85,6 +86,8 @@ public class Partition<T> {
 		}
 	}
 	
+	
+	
 	@Override
 	public String toString(){
 		String res = "[";
@@ -96,6 +99,11 @@ public class Partition<T> {
 			res = res.substring(0, res.length() - 1) + " ]";
 		}
 		return res + " ]";
+	}
+
+	@Override
+	public Iterator<Set<T>> iterator() {
+		return constraints.iterator();
 	}
 	
 }
