@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import it.unige.dibris.Exception.EnvironmentVariableNotDefined;
 import it.unige.dibris.Exception.JADEAgentInitializationException;
@@ -86,10 +87,13 @@ public class Boot {
 		/* Parsing JADE agents */
 		String[] agentsargs = args[1].split(";");
 		/* Partition used for the runtime verification */
-		String projectionSet = "[";
+		List<List<? extends String>> projectionSet = new ArrayList<>();
+		List<String> centralizedP = new ArrayList<>();
+		projectionSet.add(centralizedP);
 		for(String agent : agentsargs){
 			String name = agent.split(":")[0];
-			projectionSet += name + ",";
+			//projectionSet += name + ",";
+			centralizedP.add(name);
 			String constructor = agent.split(":")[1];
 			if(!constructor.contains("(") || !constructor.contains(")")){
 				throw new IllegalArgumentException("JADE agents must follow the syntax: name:type(arg1,...,argN)");
@@ -102,29 +106,42 @@ public class Boot {
 				throw new JADEAgentInitializationException("Unable to create the agent " + name + " of type " + type, e);
 			}
 		}
-		projectionSet = projectionSet.substring(0, projectionSet.length()-1) + "]";
+		//projectionSet = projectionSet.substring(0, projectionSet.length()-1) + "]";
+		Partition<String> partition = new Partition<String>(projectionSet);
 		/* Sniffer creation */
-		Sniffer s = new Sniffer();
-		s.setArguments(new String[]{
-				"snifferCentralized.txt",
-				projectionSet
-		});
+		runMonitors(container, partition);
+		runAgents(container, agents);
+		
+		/* Set to close the JVM when JADE environment ends */
+		jade.core.Runtime.instance().setCloseVM(true);		
+	}
+	
+	public static void runMonitors(AgentContainer container, Partition<String> p){
+		for(Set<String> constraint : p){
+			/* Sniffer creation */
+			Sniffer s = new Sniffer();
+			String constraintAux = constraint.toString().replace("[", "").replace("]", "").replace(",", "_").replace(" ", "");
+			s.setArguments(new String[]{
+					"sniffer" + constraintAux + ".txt",
+					constraint.toString()
+			});
+			try{
+				AgentController ac = container.acceptNewAgent("sniffer" + constraintAux, s);
+				ac.start();
+			} catch(StaleProxyException e){
+				throw new JADEContainerInitializationException("Unable to start an agent container", e);
+			}
+		}
+	}
+	
+	private static void runAgents(AgentContainer container, List<AgentController> agents){
 		try{
-			AgentController ac = container.acceptNewAgent("snifferCentralized", s);
-			ac.start();
 			for(AgentController agent : agents){
 				agent.start();
 			}
 		} catch(StaleProxyException e){
 			throw new JADEContainerInitializationException("Unable to start an agent container", e);
 		}
-		
-		/* Set to close the JVM when JADE environment ends */
-		jade.core.Runtime.instance().setCloseVM(true);		
-	}
-	
-	public static void executeMonitors(Partition p){
-		
 	}
 	
 	/**
