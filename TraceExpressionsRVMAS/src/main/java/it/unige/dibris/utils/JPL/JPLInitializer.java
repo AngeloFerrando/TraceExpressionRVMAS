@@ -14,7 +14,7 @@ import it.unige.dibris.Exception.PrologException;
 
 public class JPLInitializer {
 	
-	public static void init(String pathToTraceExpression){
+	public static void init(){
 		JPL.setTraditional();
 		JPL.init();
 		
@@ -23,8 +23,11 @@ public class JPLInitializer {
 		
 		JPLInitializer.createAndCheck("consult", new Atom(pathToLibrary));
 		JPLInitializer.createAndCheck("consult", new Atom(pathToDecAMon));
-		JPLInitializer.createAndCheck("consult", new Atom(pathToTraceExpression));
 	}
+	
+//	public static void loadTraceExpression(String pathToTraceExpression){
+//		JPLInitializer.createAndCheck("consult", new Atom(pathToTraceExpression));
+//	}
 	
 	public static List<Term> fromCompoundToList(Term term){
 		List<Term> l = new ArrayList<>();

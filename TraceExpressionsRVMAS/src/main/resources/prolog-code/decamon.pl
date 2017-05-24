@@ -45,7 +45,7 @@
 
 
 :- use_module(library(coinduction)).
-:- dynamic has_type/2.
+:- dynamic match/2.
 :- coinductive pre_processing/3.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -66,7 +66,7 @@ decAMonJADE(MMsPartitions) :-
 % in the interaction type passed as first argument
 % Example: involved_type(msg1, [alice, bob]).
 involved_type(IntType, InvolvedAgents) :-
-  findall(Agent, (has_type(msg(_, sender(Agent), _, _), IntType); has_type(msg(_, _, receiver(Agent), _), IntType)), Aux),
+  findall(Agent, (match(msg(_, sender(Agent), _, _), IntType); match(msg(_, _, receiver(Agent), _), IntType)), Aux),
   list_to_set(Aux, InvolvedAgents).
 
 % given a trace expression, involved unifies the second argument with the set
@@ -207,14 +207,14 @@ pre_processing(T1/\T2, TP1/\TP2, InvolvedAgents) :-
   pre_processing(T2, TP2, InvolvedAgents).
 pre_processing(IntType >> T, TP, InvolvedAgents) :-
   pre_processing(T, TP1, InvolvedAgents),
-  findall(Msg, has_type(Msg, IntType), Interactions1),
+  findall(Msg, match(Msg, IntType), Interactions1),
   list_to_set(Interactions1, Interactions),
-  findall(Msg, (has_type(Msg, _), Msg = msg(S,R,_), member(S, InvolvedAgents), member(R, InvolvedAgents)), World1),
+  findall(Msg, (match(Msg, _), Msg = msg(S,R,_), member(S, InvolvedAgents), member(R, InvolvedAgents)), World1),
   list_to_set(World1, World),
   subtract(World, Interactions, NotInteractions),
   string_concat(not, IntType, NotIntType),
-  retractall(has_type(_, NotIntType)),
-  asserta(has_type(Interaction, NotIntType) :- member(Interaction, NotInteractions)),
+  retractall(match(_, NotIntType)),
+  asserta(match(Interaction, NotIntType) :- member(Interaction, NotInteractions)),
   T1 = (NotIntType:T1) \/ epsilon,
   T2 = IntType:T2,
   TP = (T1 | (T2 /\ TP1)).
@@ -462,6 +462,9 @@ decOne_print(T, P) :-
   involved(T, InvolvedAgents),
   pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P), pretty_print(P).
 
+decOne(P) :-
+  trace_expression(T),
+  decOne(T, P).
 decOne(T, P) :-
   involved(T, InvolvedAgents),
   pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P).
@@ -607,6 +610,99 @@ count_singleton_groups(Prev, [H|T], Singleton) :-
        count_singleton_groups(New, T, Singleton));
      count_singleton_groups(Prev, T, Singleton)).
 
+
+critical_point(IntType:T, Constraints) :-
+  involved_type(IntType, InvolvedAgents1),
+  first_it(T, FirstIntTypes),
+  findall((InvolvedAgents1, InvolvedAgents2), % find all agent sets with empty intersection with the agents involved in the interaction type
+  (member(FirstIntType, FirstIntTypes),
+   involved_type(FirstIntType, InvolvedAgents2),
+   intersection(InvolvedAgents1, InvolvedAgents2, [])), InvolvedAgents2LAux),
+  list_to_set(InvolvedAgents2LAux, Constraints),
+  Constraints \== [].
+critical_point(T1\/T2, Constraints) :-
+  first_it(T1, FirstIntTypes1),
+  first_it(T2, FirstIntTypes2),
+  % find all couples of set of agents with empty intersection
+  findall((FirstInvolvedAgents1, FirstInvolvedAgents2),
+  (member(FirstIntType1, FirstIntTypes1),
+   member(FirstIntType2, FirstIntTypes2),
+   involved_type(FirstIntType1, FirstInvolvedAgents1),
+   involved_type(FirstIntType2, FirstInvolvedAgents2),
+   intersection(FirstInvolvedAgents1, FirstInvolvedAgents2, [])
+  ),
+  Constraints),
+  Constraints \== [].
+critical_point(T1*T2, Constraints) :-
+  last_it(T1, LastIntTypes),
+  first_it(T2, FirstIntTypes),
+  findall((LastInvolvedAgents, FirstInvolvedAgents),
+  (member(LastIntType, LastIntTypes),
+   member(FirstIntType, FirstIntTypes),
+   involved_type(LastIntType, LastInvolvedAgents),
+   involved_type(FirstIntType, FirstInvolvedAgents),
+   intersection(LastInvolvedAgents, FirstInvolvedAgents, [])
+  ),
+  Constraints),
+  Constraints \== [].
+
+constraints_satisfied(Constraints, P) :-
+  findall((Agents1, Agents2),
+    (
+      member((Agents1, Agents2), Constraints),
+      member(Constraint, P),
+      intersection(Constraint, Agents1, Safe1), Safe1 \= [],
+      intersection(Constraint, Agents2, Safe2), Safe2 \= []
+    ),
+  SafeConstraints),
+  findall(C,(member(C, Constraints), not(member(C, SafeConstraints))), []).
+
+is_monitoring_safe(Partition) :-
+  trace_expression(T),
+  is_monitoring_safe(Partition, T).
+is_monitoring_safe(Partition, T) :-
+  empty_assoc(Assoc),
+  is_monitoring_safe(Partition, T, Assoc), !.
+
+is_monitoring_safe(_, epsilon, _) :- !.
+is_monitoring_safe(_, T, Assoc) :-
+  get_assoc(T, Assoc, _), !.
+is_monitoring_safe(P, IntType:T, Assoc) :-
+  critical_point(IntType:T, Constraints), !,
+  put_assoc(IntType:T, Assoc, _, Assoc1),
+  constraints_satisfied(Constraints, P),
+  is_monitoring_safe(P, T, Assoc1).
+is_monitoring_safe(P, IntType:T, Assoc) :-
+  put_assoc(IntType:T, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T, Assoc1).
+is_monitoring_safe(P, T1\/T2, Assoc) :-
+  critical_point(T1\/T2, Constraints), !,
+  put_assoc(T1\/T2, Assoc, _, Assoc1),
+  constraints_satisfied(Constraints, P),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
+is_monitoring_safe(P, T1\/T2, Assoc) :-
+  put_assoc(T1\/T2, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
+is_monitoring_safe(P, T1|T2, Assoc) :-
+  put_assoc(T1|T2, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
+is_monitoring_safe(P, T1*T2, Assoc) :-
+  critical_point(T1*T2, Constraints), !,
+  put_assoc(T1*T2, Assoc, _, Assoc1),
+  constraints_satisfied(Constraints, P),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
+is_monitoring_safe(P, T1*T2, Assoc) :-
+  put_assoc(T1*T2, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
+is_monitoring_safe(P, T1/\T2, Assoc) :-
+  put_assoc(T1/\T2, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T1, Assoc1),
+  is_monitoring_safe(P, T2, Assoc1).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%

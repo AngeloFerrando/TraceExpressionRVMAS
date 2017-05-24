@@ -1,6 +1,5 @@
 package it.unige.dibris.TExpRVMAS;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +40,7 @@ public class Partition<T> implements Iterable<Set<T>>{
 	}
 	
 	public int getNumberSingletons(){
-		return getNumberConstraints(1);
+		return getNumberConstraintsSize(1);
 	}
 	
 
@@ -49,7 +48,7 @@ public class Partition<T> implements Iterable<Set<T>>{
 		return constraints.size();
 	}
 	
-	public int getNumberConstraints(int size){
+	public int getNumberConstraintsSize(int size){
 		int count = 0;
 		for(Set<T> set : constraints){
 			if(set.size() == size){
@@ -59,7 +58,27 @@ public class Partition<T> implements Iterable<Set<T>>{
 		return count;
 	}
 	
-	public int getNumberConstraints(int minSize, int maxSize){
+	public int getNumberConstraintsAtLeastSize(int size){
+		int count = 0;
+		for(Set<T> set : constraints){
+			if(set.size() >= size){
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	public int getNumberConstraintsAtMostSize(int size){
+		int count = 0;
+		for(Set<T> set : constraints){
+			if(set.size() <= size){
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	public int getNumberConstraintsBetweenSize(int minSize, int maxSize){
 		int count = 0;
 		for(Set<T> set : constraints){
 			if(set.size() >= minSize && set.size() <= maxSize){
@@ -135,11 +154,11 @@ public class Partition<T> implements Iterable<Set<T>>{
 		for(Set<T> constraint : constraints){
 			res += "[";
 			for(T elem : constraint){
-				res += " " + elem + ",";
+				res += elem + ",";
 			}
-			res = res.substring(0, res.length() - 1) + " ]";
+			res = res.substring(0, res.length() - 1) + "],";
 		}
-		return res + " ]";
+		return res.substring(0, res.length() - 1) + "]";
 	}
 
 	@Override

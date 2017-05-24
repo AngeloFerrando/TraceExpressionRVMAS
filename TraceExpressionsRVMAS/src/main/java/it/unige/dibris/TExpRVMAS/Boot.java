@@ -5,8 +5,10 @@ import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import it.unige.dibris.Exception.EnvironmentVariableNotDefined;
@@ -32,7 +34,7 @@ import jade.wrapper.StaleProxyException;
 public class Boot {
 
 	private String swipl;
-	private String tExpPath;
+	private TraceExpression tExp;
 	
 	private Boot(){}
 
@@ -52,9 +54,6 @@ public class Boot {
 		
 		/* Parsing arguments */
 		Boot boot = Boot.parseArguments(args);
-		
-		/* SWI-Prolog environment initialization (transition system, DecAMon, current trace expression) */
-		JPLInitializer.init(boot.tExpPath);
 		
 		/* Initialize JADE environment */
 		jade.core.Runtime runtime = jade.core.Runtime.instance();
@@ -87,6 +86,35 @@ public class Boot {
 		}
 		//projectionSet = projectionSet.substring(0, projectionSet.length()-1) + "]";
 		Partition<String> partition = new Partition<String>(projectionSet);
+				
+		for(Partition<String> p : boot.tExp.getMinimalMonitoringSafePartitions(null)){
+			System.out.println(p);
+		}
+		System.out.println();
+		List<Condition> conditions = new ArrayList<>();
+		conditions.add(FactoryConditions.createAtLeastNumberSingletonsCondition(2));
+		conditions.add(FactoryConditions.createAtLeastNumberAgentsForConstraintCondition(1));
+		conditions.add(FactoryConditions.createAtLeastNumberOfConstraintsCondition(3));
+
+		List<Partition<String>> mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(conditions);
+		int random = new Random().nextInt(mmsPartitions.size());
+		
+		System.out.println("Partitions found:");
+		for(Partition<String> p : mmsPartitions){
+			System.out.println(p);
+		}
+		
+		/*// Test of getMonitoringSafePartitions method
+		Iterator<Partition<String>> itMSPartitions = boot.tExp.getMonitoringSafePartitions(conditions).iterator();
+		if(itMSPartitions.hasNext()){
+			partition = itMSPartitions.next();
+		}
+		*/
+		
+		if(mmsPartitions.size() > 0){
+			partition = mmsPartitions.get(random);
+		}
+		
 		/* Sniffer creation */
 		runMonitors(container, partition);
 		runAgents(container, agents);
@@ -108,7 +136,7 @@ public class Boot {
 		/* If it does not exist an exception is thrown */
 		if(boot.swipl == null){
 			throw new EnvironmentVariableNotDefined("SWI_LIB environment variable not defined");
-		}
+		}		
 		
 		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
 		try{
@@ -117,13 +145,13 @@ public class Boot {
 			throw new JavaLibraryPathException("An error occured during the user path retrieval information process", e);
 		}
 		
+		/* SWI-Prolog environment initialization (transition system, DecAMon, current trace expression) */
+		JPLInitializer.init();
+		
 		/* Now we check only if the file exists. 
 		 * TO-DO To check if the file is syntactically and semantically correct */
-		boot.tExpPath = args[0];
-		File tExpFile = new File(boot.tExpPath);
-		if(!tExpFile.exists()){ 
-		    throw new FileNotFoundException(boot.tExpPath + " file not found");
-		}
+		boot.tExp = new TraceExpression(args[0]);
+		
 		return boot;
 	}
 	
