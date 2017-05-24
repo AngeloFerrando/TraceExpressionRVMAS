@@ -1,4 +1,4 @@
-package it.unige.dibris.TExpRVMAS;
+package it.unige.dibris.TExpRVMAS.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
