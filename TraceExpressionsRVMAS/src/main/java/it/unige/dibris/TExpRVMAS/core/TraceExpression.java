@@ -13,7 +13,7 @@ import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
 
-import it.unige.dibris.utils.JPL.JPLInitializer;
+import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
 /**
  * Class representing the Trace Expression used to model the protocols which guide the 

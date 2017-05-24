@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import it.unige.dibris.Exception.EnvironmentVariableNotDefined;
-import it.unige.dibris.Exception.JADEAgentInitializationException;
-import it.unige.dibris.Exception.JADEContainerInitializationException;
-import it.unige.dibris.Exception.JavaLibraryPathException;
-import it.unige.dibris.monitor.Sniffer;
-import it.unige.dibris.utils.JPL.JPLInitializer;
+import it.unige.dibris.TExpRVMAS.Exception.EnvironmentVariableNotDefined;
+import it.unige.dibris.TExpRVMAS.Exception.JADEAgentInitializationException;
+import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
+import it.unige.dibris.TExpRVMAS.Exception.JavaLibraryPathException;
+import it.unige.dibris.TExpRVMAS.monitor.Sniffer;
+import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.AgentContainer;
