@@ -1,4 +1,4 @@
-package it.unige.dibris.TExpRVMAS.core;
+package it.unige.dibris.TExpRVMAS.core.protocol;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,6 +13,8 @@ import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
 
+import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
+import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
 /**

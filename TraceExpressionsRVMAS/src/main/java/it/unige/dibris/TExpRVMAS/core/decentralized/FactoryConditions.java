@@ -1,4 +1,4 @@
-package it.unige.dibris.TExpRVMAS.core;
+package it.unige.dibris.TExpRVMAS.core.decentralized;
 
 public class FactoryConditions {
 

@@ -1,4 +1,4 @@
-package it.unige.dibris.TExpRVMAS.core;
+package it.unige.dibris.TExpRVMAS.core.decentralized;
 
 import java.util.HashSet;
 import java.util.Iterator;
