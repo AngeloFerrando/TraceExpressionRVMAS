@@ -15,6 +15,7 @@ import org.jpl7.Query;
 import org.jpl7.Term;
 
 import it.unige.dibris.TExpRVMAS.Exception.NoMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.Exception.TraceExpressionNotContractiveException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
@@ -46,6 +47,9 @@ public class TraceExpression {
 		JPLInitializer.createAndCheck("retractall(match(_, _))");
 		JPLInitializer.createAndCheck("retractall(trace_expression(_))");
 		JPLInitializer.createAndCheck("consult", new Atom(tExpFile.getAbsolutePath()));
+		if(!isContractive()){
+			throw new TraceExpressionNotContractiveException();
+		}
 	}
 	
 	public List<Partition<String>> getMinimalMonitoringSafePartitions(List<Condition> conditions){
@@ -89,6 +93,13 @@ public class TraceExpression {
 	
 	public boolean isMonitoringSafe(Partition<String> partition){
 		Query query = new Query("is_monitoring_safe(" + partition + ")");
+		boolean res = query.hasSolution();
+		query.close();
+		return res;
+	}
+	
+	private boolean isContractive(){
+		Query query = new Query("is_contractive()");
 		boolean res = query.hasSolution();
 		query.close();
 		return res;

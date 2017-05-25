@@ -242,6 +242,9 @@ accept(N,T1,[E|L],T3) :-
   accept(M,T2,L,T3).
 
 
+is_contractive() :-
+  trace_expression(T),
+  is_contractive(T).
 is_contractive(T) :-
   empty_assoc(A),
   is_contractive(T, 0, -1, A).
