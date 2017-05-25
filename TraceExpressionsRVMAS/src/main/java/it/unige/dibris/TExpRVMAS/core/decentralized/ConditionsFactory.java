@@ -1,6 +1,6 @@
 package it.unige.dibris.TExpRVMAS.core.decentralized;
 
-public class FactoryConditions {
+public class ConditionsFactory {
 
 	public static Condition createNumberSingletonsCondition(int minNumberSingletons, int maxNumberSingletons){
 		if(minNumberSingletons > maxNumberSingletons){
