@@ -11,7 +11,6 @@ import org.jpl7.Term;
 import it.unige.dibris.TExpRVMAS.Exception.DecentralizedPartitionNotFoundException;
 import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.Exception.NoMinimalMonitoringSafePartitionFoundException;
-import it.unige.dibris.TExpRVMAS.Exception.NoMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.Exception.NotMonitoringSafePartitionException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;

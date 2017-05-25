@@ -1,5 +1,6 @@
 package it.unige.dibris.TExpRVMAS.Exception;
 
+@SuppressWarnings("serial")
 public class TraceExpressionNotContractiveException extends RuntimeException {
 
 	public TraceExpressionNotContractiveException() {
