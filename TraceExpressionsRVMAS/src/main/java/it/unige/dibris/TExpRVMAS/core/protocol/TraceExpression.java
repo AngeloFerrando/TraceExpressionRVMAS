@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 import org.jpl7.Atom;
 import org.jpl7.Compound;
@@ -13,6 +14,7 @@ import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
 
+import it.unige.dibris.TExpRVMAS.Exception.NoMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
@@ -40,7 +42,7 @@ public class TraceExpression {
 	 * Load the trace expression inside the SWI-Prolog environment.
 	 * @throws PrologException
 	 */
-	private void load(){
+	public void load(){
 		JPLInitializer.createAndCheck("retractall(match(_, _))");
 		JPLInitializer.createAndCheck("retractall(trace_expression(_))");
 		JPLInitializer.createAndCheck("consult", new Atom(tExpFile.getAbsolutePath()));
@@ -86,10 +88,36 @@ public class TraceExpression {
 	}
 	
 	public boolean isMonitoringSafe(Partition<String> partition){
-		Query query = new Query("is_monitoring_safe(Partition)");
+		Query query = new Query("is_monitoring_safe(" + partition + ")");
 		boolean res = query.hasSolution();
 		query.close();
 		return res;
+	}
+	
+	public Partition<String> getRandomMonitoringSafePartition(List<Condition> conditions) throws NoMonitoringSafePartitionFoundException{
+		int random = new Random().nextInt();
+		List<Partition<String>> msPartitions = new ArrayList<>();
+		int count = 0;
+		for(Partition<String> p : getMonitoringSafePartitions(conditions)){
+			if(count == random){
+				return p;
+			}
+			msPartitions.add(p);
+		}
+		if(msPartitions.size() > 0){
+			return msPartitions.get(random % msPartitions.size());
+		} else{
+			throw new NoMonitoringSafePartitionFoundException();
+		}
+	}
+	
+	public Partition<String> getFirstMonitoringSafePartition(List<Condition> conditions) throws NoMonitoringSafePartitionFoundException{
+		Iterator<Partition<String>> itPartitions = getMonitoringSafePartitions(conditions).iterator();
+		if(itPartitions.hasNext()){
+			return itPartitions.next();
+		} else{
+			throw new NoMonitoringSafePartitionFoundException();
+		}
 	}
 	
 	public Iterable<Partition<String>> getMonitoringSafePartitions(List<Condition> conditions){
