@@ -43,9 +43,11 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.jar.Attributes.Name;
 
 import org.jpl7.Query;
 
+import it.unige.dibris.TExpRVMAS.core.Monitor;
 import jade.content.AgentAction;
 import jade.content.onto.basic.Action;
 import jade.content.onto.basic.Done;
@@ -86,8 +88,13 @@ import jade.util.leap.Iterator;
 import jade.util.leap.List;
 
 /* public class Sniffer */
-public class Sniffer extends ToolAgent {
-        FileWriter fstream;
+public class Sniffer extends Monitor {
+	
+	public Sniffer(String name) {
+		super(name);
+	}
+
+		FileWriter fstream;
 	BufferedWriter out;
 	public static String newline;
 	private long local_epoch = new Date().getTime();
@@ -100,6 +107,7 @@ public class Sniffer extends ToolAgent {
 	private ArrayList agentsUnderSniff = new ArrayList();
 	public static Lock lock = new ReentrantLock();
 
+	
 	/* class AMSClientBehaviour private to class Sniffer */
 	private class AMSClientBehaviour extends SimpleAchieveREInitiator {
 		private String actionName;
@@ -438,7 +446,7 @@ public class Sniffer extends ToolAgent {
 					// ignore - Properties not processed
 				}
                  }*/
-                if (sniffed_agents == "[")
+                if (sniffed_agents.equals("["))
                     sniffed_agents = "[]";
                 else
                     sniffed_agents =  sniffed_agents.substring(0, sniffed_agents.length()-1) + "]";
