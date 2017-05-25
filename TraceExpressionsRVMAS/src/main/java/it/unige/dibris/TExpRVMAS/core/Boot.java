@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import it.unige.dibris.TExpRVMAS.Exception.EnvironmentVariableNotDefined;
+import it.unige.dibris.TExpRVMAS.Exception.EnvironmentVariableNotDefinedException;
 import it.unige.dibris.TExpRVMAS.Exception.JADEAgentInitializationException;
 import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.Exception.JavaLibraryPathException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
-import it.unige.dibris.TExpRVMAS.core.decentralized.FactoryConditions;
+import it.unige.dibris.TExpRVMAS.core.decentralized.ConditionsFactory;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.core.monitor.Sniffer;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
@@ -96,9 +96,9 @@ public class Boot {
 		}
 		System.out.println();
 		List<Condition> conditions = new ArrayList<>();
-		conditions.add(FactoryConditions.createAtLeastNumberSingletonsCondition(2));
-		conditions.add(FactoryConditions.createAtLeastNumberAgentsForConstraintCondition(1));
-		conditions.add(FactoryConditions.createAtLeastNumberOfConstraintsCondition(3));
+		conditions.add(ConditionsFactory.createAtLeastNumberSingletonsCondition(2));
+		conditions.add(ConditionsFactory.createAtLeastNumberAgentsForConstraintCondition(1));
+		conditions.add(ConditionsFactory.createAtLeastNumberOfConstraintsCondition(3));
 
 		List<Partition<String>> mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(conditions);
 		int random = new Random().nextInt(mmsPartitions.size());
@@ -119,8 +119,18 @@ public class Boot {
 			partition = mmsPartitions.get(random);
 		}
 		
-		/* Sniffer creation */
-		runMonitors(container, partition);
+		/* Monitor creation */
+//		for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitor(boot.tExp, partition)){
+//			try{
+//				AgentController ac = container.acceptNewAgent(m.getMonitorName(), m);
+//				ac.start();
+//			} catch(StaleProxyException e){
+//				throw new JADEContainerInitializationException("Unable to start a monitor container", e);
+//			}
+//		}
+		
+		SnifferMonitorFactory.createAndRunCentralizedMonitor(boot.tExp, container);
+		
 		runAgents(container, agents);
 		
 		/* Set to close the JVM when JADE environment ends */
@@ -139,7 +149,7 @@ public class Boot {
 		
 		/* If it does not exist an exception is thrown */
 		if(boot.swipl == null){
-			throw new EnvironmentVariableNotDefined("SWI_LIB environment variable not defined");
+			throw new EnvironmentVariableNotDefinedException("SWI_LIB environment variable not defined");
 		}		
 		
 		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
@@ -159,23 +169,23 @@ public class Boot {
 		return boot;
 	}
 	
-	public static void runMonitors(AgentContainer container, Partition<String> p){
-		for(Set<String> constraint : p){
-			/* Sniffer creation */
-			Sniffer s = new Sniffer();
-			String constraintAux = constraint.toString().replace("[", "").replace("]", "").replace(",", "_").replace(" ", "");
-			s.setArguments(new String[]{
-					"sniffer" + constraintAux + ".txt",
-					constraint.toString()
-			});
-			try{
-				AgentController ac = container.acceptNewAgent("sniffer" + constraintAux, s);
-				ac.start();
-			} catch(StaleProxyException e){
-				throw new JADEContainerInitializationException("Unable to start an agent container", e);
-			}
-		}
-	}
+//	public static void runMonitors(AgentContainer container, Partition<String> p){
+//		for(Set<String> constraint : p){
+//			/* Sniffer creation */
+//			Sniffer s = new Sniffer();
+//			String constraintAux = constraint.toString().replace("[", "").replace("]", "").replace(",", "_").replace(" ", "");
+//			s.setArguments(new String[]{
+//					"sniffer" + constraintAux + ".txt",
+//					constraint.toString()
+//			});
+//			try{
+//				AgentController ac = container.acceptNewAgent("sniffer" + constraintAux, s);
+//				ac.start();
+//			} catch(StaleProxyException e){
+//				throw new JADEContainerInitializationException("Unable to start an agent container", e);
+//			}
+//		}
+//	}
 	
 	private static void runAgents(AgentContainer container, List<AgentController> agents){
 		try{
