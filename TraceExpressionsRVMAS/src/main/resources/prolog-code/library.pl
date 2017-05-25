@@ -71,6 +71,19 @@ does_not_halt(T1/\T2) :- (does_not_halt(T1), !; does_not_halt(T2)).
 does_not_halt(_>>T) :- !, does_not_halt(T).
 does_not_halt(var(_, T)) :- !, does_not_halt(T).
 
+% may_halt predicate iterated on the trace expression
+% Example: T = msg1:epsilon, may_eventually_halt(T).
+% Example: T = msg1:T, not(may_eventually_halt(T)).
+may_eventually_halt(T) :-
+  empty_assoc(A),
+  may_eventually_halt(T, A).
+may_eventually_halt(T, A) :-
+  get_assoc(T, A, _), !, fail.
+may_eventually_halt(T, _) :- may_halt(T), !.
+may_eventually_halt(T, A) :-
+  put_assoc(T, A, _, A1),
+  next(T, _, T1), may_eventually_halt(T1, A1).
+
 %%% optimization
 fork(epsilon, T, T) :- !.
 fork(T, epsilon, T) :- !.
@@ -229,6 +242,42 @@ accept(N,T1,[E|L],T3) :-
   accept(M,T2,L,T3).
 
 
+is_contractive(T) :-
+  empty_assoc(A),
+  is_contractive(T, 0, -1, A).
+is_contractive(epsilon, _, _, _) :- !.
+is_contractive(T, _Depth, DeepestSeq, Assoc) :-
+  get_assoc(T, Assoc, LoopDepth), !,
+  LoopDepth =< DeepestSeq.
+is_contractive(ET:T, Depth, _DeepestSeq, Assoc) :-
+  put_assoc(ET:T, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T, IncDepth, Depth, Assoc1).
+is_contractive(T1\/T2, Depth, DeepestSeq, Assoc) :-
+  put_assoc(T1\/T2, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T1, IncDepth, DeepestSeq, Assoc1),
+  is_contractive(T2, IncDepth, DeepestSeq, Assoc1).
+is_contractive(T1|T2, Depth, DeepestSeq, Assoc) :-
+  put_assoc(T1|T2, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T1, IncDepth, DeepestSeq, Assoc1),
+  is_contractive(T2, IncDepth, DeepestSeq, Assoc1).
+is_contractive(T1*T2, Depth, DeepestSeq, Assoc) :-
+  put_assoc(T1*T2, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T1, IncDepth, DeepestSeq, Assoc1),
+  is_contractive(T2, IncDepth, DeepestSeq, Assoc1).
+is_contractive(T1/\T2, Depth, DeepestSeq, Assoc) :-
+  put_assoc(T1/\T2, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T1, IncDepth, DeepestSeq, Assoc1),
+  is_contractive(T2, IncDepth, DeepestSeq, Assoc1).
+is_contractive(ET>>T, Depth, DeepestSeq, Assoc) :-
+  put_assoc(ET>>T, Assoc, Depth, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T, IncDepth, DeepestSeq, Assoc1).
+
 /* ************************************************************************** */
 /* 							DYNAMIC PROJECTION				 			      */
 /* ************************************************************************** */
@@ -289,12 +338,12 @@ project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
 project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
 ProjectedType=(ProjectedType1*ProjectedType2).
 
-project(Assoc, Depth, _DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
+project(Assoc, Depth, DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((IntType>>Type1),Assoc,(ProjectedType,Depth),NewAssoc),
 %(involves(IntType, ProjectedAgents) ->
 IncDepth is Depth+1,
-project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
+project(NewAssoc,IncDepth,DeepestSeq,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
 
 /****************************************************************************/
 /* 	  INVOLVES PREDICATE: can be redefined to consider agent roles      */

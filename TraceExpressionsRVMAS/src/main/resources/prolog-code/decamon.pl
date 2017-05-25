@@ -69,6 +69,10 @@ involved_type(IntType, InvolvedAgents) :-
   findall(Agent, (match(msg(_, sender(Agent), _, _), IntType); match(msg(_, _, receiver(Agent), _), IntType)), Aux),
   list_to_set(Aux, InvolvedAgents).
 
+involved(InvolvedAgents) :-
+  trace_expression(T),
+  involved(T, InvolvedAgents).
+
 % given a trace expression, involved unifies the second argument with the set
 % containing all agents involved in the trace expression
 % Example: involved((msg1:epsilon|msg2:epsilon), [alice, bob, charlie, david]).
@@ -646,6 +650,7 @@ critical_point(T1*T2, Constraints) :-
   Constraints),
   Constraints \== [].
 
+constraints_satisfied([([], [])], _) :- !.
 constraints_satisfied(Constraints, P) :-
   findall((Agents1, Agents2),
     (
@@ -662,7 +667,9 @@ is_monitoring_safe(Partition) :-
   is_monitoring_safe(Partition, T).
 is_monitoring_safe(Partition, T) :-
   empty_assoc(Assoc),
-  is_monitoring_safe(Partition, T, Assoc), !.
+  involved(T, InvolvedAgents),
+  pre_processing(T, T1, InvolvedAgents), !,
+  is_monitoring_safe(Partition, T1, Assoc), !.
 
 is_monitoring_safe(_, epsilon, _) :- !.
 is_monitoring_safe(_, T, Assoc) :-
