@@ -35,7 +35,7 @@ public class SnifferMonitorFactory {
 	 * @return the centralized monitor (ready to be executed by the user)
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if tExp is null
+	 * @throws NullPointerException if <code>tExp</code> is null
 	 */
 	public static Monitor createCentralizedMonitor(TraceExpression tExp){
 		if(tExp == null){
@@ -70,7 +70,7 @@ public class SnifferMonitorFactory {
 	 * @return the centralized monitor (ready to be executed by the user)
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if tExp or container are null
+	 * @throws NullPointerException if <code>tExp</code> or <code>container</code> are null
 	 */
 	public static Monitor createAndRunCentralizedMonitor(TraceExpression tExp, AgentContainer container){
 		if(tExp == null || container == null){
@@ -113,9 +113,10 @@ public class SnifferMonitorFactory {
 	 * 
 	 * @throws DecentralizedPartitionNotFoundException if no partition can be found to decentralize to generate the monitors (only a centralized monitor can be used)
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if tExp or pType or conditions are null
+	 * @throws NullPointerException if <code>tExp</code> or <code>pType</code> or <code>conditions</code> are null
 	 */
-	public static List<Monitor> createDecentralizedMonitor(TraceExpression tExp, PartitionType pType, Condition... conditions) throws DecentralizedPartitionNotFoundException{
+	@SuppressWarnings("unchecked")
+	public static List<Monitor> createDecentralizedMonitor(TraceExpression tExp, PartitionType pType, Condition<String>... conditions) throws DecentralizedPartitionNotFoundException{
 		if(tExp == null || pType == null || conditions == null){
 			throw new NullPointerException("tExp and pType and conditions must not be null");
 		}
@@ -146,7 +147,7 @@ public class SnifferMonitorFactory {
 	 * @return the set of monitors generated using the partition (ready to be executed by the user) 
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if tExp or partition are null
+	 * @throws NullPointerException if <code>tExp</code> or <code>partition</code> are null
 	 */
 	public static List<Monitor> createDecentralizedMonitor(TraceExpression tExp, Partition<String> partition) {
 		if(tExp == null || partition == null){
@@ -163,7 +164,7 @@ public class SnifferMonitorFactory {
 	 * @param partition to use to generate the decentralized monitors
 	 * @return the set of monitors generated
 	 * 
-	 * @throws NullPointerException if partition is null
+	 * @throws NullPointerException if <code>partition</code> is null
 	 */
 	private static List<Monitor> createMonitors(Partition<String> partition){
 		if(partition == null){

@@ -1,7 +1,6 @@
 package it.unige.dibris.TExpRVMAS.core.decentralized;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -18,7 +17,7 @@ public class ConditionsFactory {
 	 * @param maxNumberSingletons is the maximum number of singletons allowed
 	 * @return the corresponding condition
 	 * 
-	 * @throws IllegalArgumentException if minNumberSingletons > maxNumberSingletons 
+	 * @throws IllegalArgumentException if <code>minNumberSingletons</code> > <code>maxNumberSingletons</code> 
 	 */
 	public static Condition<String> createNumberSingletonsCondition(int minNumberSingletons, int maxNumberSingletons){
 		if(minNumberSingletons > maxNumberSingletons){
@@ -60,7 +59,7 @@ public class ConditionsFactory {
 	 * @param maxNumberAgentsForConstraint is the maximum number of agents for single constraint allowed
 	 * @return the corresponding condition
 	 * 
-	 * @throws IllegalArgumentException if minNumberAgentsForConstraint > maxNumberAgentsForConstraint
+	 * @throws IllegalArgumentException if <code>minNumberAgentsForConstraint</code> > <code>maxNumberAgentsForConstraint</code>
 	 */
 	public static Condition<String> createNumberAgentsForConstraintCondition(int minNumberAgentsForConstraint, int maxNumberAgentsForConstraint){
 		if(minNumberAgentsForConstraint > maxNumberAgentsForConstraint){
@@ -99,7 +98,7 @@ public class ConditionsFactory {
 	 * @param maxNumberCostraints is the maximum number of constraints inside the partition allowed
 	 * @return the corresponding condition
 	 * 
-	 * @throws IllegalArgumentException if minNumberCostraints > maxNumberCostraints
+	 * @throws IllegalArgumentException if <code>minNumberCostraints</code> > <code>maxNumberCostraints</code>
 	 */
 	public static Condition<String> createNumberOfConstraintsCondition(int minNumberCostraints, int maxNumberCostraints){
 		if(minNumberCostraints > maxNumberCostraints){
@@ -141,7 +140,7 @@ public class ConditionsFactory {
 	 * @param agent2 is the second agent
 	 * @return the corresponding condition
 	 * 
-	 * @throws NullPointerException if agent1 or agent2 are null
+	 * @throws NullPointerException if <code>agent1</code> or <code>agent2</code> are null
 	 */
 	public static Condition<String> createMustBeTogetherCondition(String agent1, String agent2){
 		if(agent1 == null || agent2 == null){
@@ -162,7 +161,7 @@ public class ConditionsFactory {
 	 * @param agent2 is the second agent
 	 * @return the corresponding condition
 	 * 
-	 * @throws NullPointerException if agent1 or agent2 are null
+	 * @throws NullPointerException if <code>agent1</code> or <code>agent2</code> are null
 	 */
 	public static Condition<String> createMustBeSplitCondition(String agent1, String agent2){
 		if(agent1 == null || agent2 == null){

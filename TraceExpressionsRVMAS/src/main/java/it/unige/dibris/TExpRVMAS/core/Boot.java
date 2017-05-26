@@ -148,7 +148,7 @@ public class Boot {
 	 * @param args are the arguments passed to the Boot class main that we want to parse
 	 * @return a new Boot object generated starting from the passed arguments
 	 * @throws FileNotFoundException if the trace expression file is not found
-	 * @throws NullPointerException if args is null
+	 * @throws NullPointerException if <code>args</code> is null
 	 * @throws IllegalArgumentException if less than 2 arguments (in args) are passed to this method
 	 * @throws EnvironmentVariableNotDefinedException if SWI_LIB environment variable is not defined
 	 * @throws JavaLibraryPathException if an error occurred adding the SWI_LIB folder to the java library path
