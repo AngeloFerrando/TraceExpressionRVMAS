@@ -1,34 +1,31 @@
 package it.unige.dibris.TExpRVMAS.core;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
+
+import org.jpl7.PrologException;
 
 import it.unige.dibris.TExpRVMAS.Exception.EnvironmentVariableNotDefinedException;
 import it.unige.dibris.TExpRVMAS.Exception.JADEAgentInitializationException;
-import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.Exception.JavaLibraryPathException;
+import it.unige.dibris.TExpRVMAS.Exception.PrologPredicateFailedException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.ConditionsFactory;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
-import it.unige.dibris.TExpRVMAS.core.monitor.Sniffer;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
-import jade.wrapper.ControllerException;
 import jade.wrapper.StaleProxyException;
 
 /**
+ * Class used to run the TraceExpressionRVMAS system.
  * Boots the TraceExpressionsRVMAS system, parsing command line arguments.
  * 
  * @author angeloferrando
@@ -37,9 +34,18 @@ import jade.wrapper.StaleProxyException;
 
 public class Boot {
 
+	/**
+	 *  Path to the SWI-Prolog library folder (it is read from the environment variable SWI_LIB) 
+	 */
 	private String swipl;
+	/** 
+	 * Trace expression used by the main to guide the runtime verification process 
+	 */
 	private TraceExpression tExp;
 	
+	/**
+	 * Default constructor
+	 */
 	private Boot(){}
 
 	/**
@@ -52,6 +58,7 @@ public class Boot {
 	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		
+		/* Just for testing the main */
 		args = new String[2];
 		args[0] = "/Users/angeloferrando/Desktop/trace_expression.texp";
 		args[1] = "alice:alt_bit.Sender(bob,msg1,5000);bob:alt_bit.Receiver(alice,ack1);charlie:alt_bit.Sender(david,msg2,10000);david:alt_bit.Receiver(charlie,ack2)";
@@ -91,16 +98,15 @@ public class Boot {
 		//projectionSet = projectionSet.substring(0, projectionSet.length()-1) + "]";
 		Partition<String> partition = new Partition<String>(projectionSet);
 				
-		for(Partition<String> p : boot.tExp.getMinimalMonitoringSafePartitions(null)){
+		for(Partition<String> p : boot.tExp.getMinimalMonitoringSafePartitions()){
 			System.out.println(p);
 		}
 		System.out.println();
-		List<Condition> conditions = new ArrayList<>();
-		conditions.add(ConditionsFactory.createAtLeastNumberSingletonsCondition(2));
-		conditions.add(ConditionsFactory.createAtLeastNumberAgentsForConstraintCondition(1));
-		conditions.add(ConditionsFactory.createAtLeastNumberOfConstraintsCondition(3));
-
-		List<Partition<String>> mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(conditions);
+		
+		List<Partition<String>> mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(
+				ConditionsFactory.createAtLeastNumberSingletonsCondition(2),
+				ConditionsFactory.createAtLeastNumberAgentsForConstraintCondition(1),
+				ConditionsFactory.createAtLeastNumberOfConstraintsCondition(3));
 		int random = new Random().nextInt(mmsPartitions.size());
 		
 		System.out.println("Partitions found:");
@@ -137,7 +143,21 @@ public class Boot {
 		jade.core.Runtime.instance().setCloseVM(true);		
 	}
 	
+	/**
+	 * Parse the arguments passed to the Boot main method
+	 * @param args are the arguments passed to the Boot class main that we want to parse
+	 * @return a new Boot object generated starting from the passed arguments
+	 * @throws FileNotFoundException if the trace expression file is not found
+	 * @throws NullPointerException if args is null
+	 * @throws IllegalArgumentException if less than 2 arguments (in args) are passed to this method
+	 * @throws EnvironmentVariableNotDefinedException if SWI_LIB environment variable is not defined
+	 * @throws JavaLibraryPathException if an error occurred adding the SWI_LIB folder to the java library path
+	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
+	 */
 	private static Boot parseArguments(String[] args) throws FileNotFoundException{
+		if(args == null){
+			throw new NullPointerException("args must not be null");
+		}
 		Boot boot = new Boot();
 		/* The arguments must be at least 2, the trace expression file and one (or more) agent(s) */
 		if(args.length != 2){
@@ -187,20 +207,27 @@ public class Boot {
 //		}
 //	}
 	
+	/**
+	 * Run all the JADE agents of the MAS that we are monitoring
+	 * @param container is the AgentContainer where the agents are executed
+	 * @param agents is the set of agents we want to execute on the container
+	 * 
+	 * @throws JADEAgentInitializationException if the Agent cannot be executed on the container
+	 */
 	private static void runAgents(AgentContainer container, List<AgentController> agents){
 		try{
 			for(AgentController agent : agents){
 				agent.start();
 			}
 		} catch(StaleProxyException e){
-			throw new JADEContainerInitializationException("Unable to start an agent container", e);
+			throw new JADEAgentInitializationException("Unable to start an agent container", e);
 		}
 	}
 	
 	/**
-	* Adds the specified path to the java library path
-	*
-	* @param pathToAdd the path to add
+	 * Add the specified path to the java library path
+	 *
+	 * @param pathToAdd is the path to add
 	 * @throws SecurityException 
 	 * @throws NoSuchFieldException 
 	 * @throws IllegalAccessException 

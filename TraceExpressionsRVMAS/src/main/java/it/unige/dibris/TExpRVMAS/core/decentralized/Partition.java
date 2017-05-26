@@ -5,6 +5,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.jpl7.Term;
+
+import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
+
 /**
  * Class representing a partition of agents used to obtain the decentralized runtime verification of a JADE MAS
  * @author angeloferrando
@@ -146,7 +150,26 @@ public class Partition<T> implements Iterable<Set<T>>{
 		}
 	}
 	
-	
+	/**
+	 * Convert a term in the corresponding partition object
+	 * @param term representing the partition to convert
+	 * @return the corresponding partition
+	 */
+	public static Partition<String> extractOnePartitionFromTerm(Term term){
+		Partition<String> partition = new Partition<>();
+		for(Term t1 : JPLInitializer.fromCompoundToList(term)){
+			String firstAgent = null;
+			for(Term t2 : JPLInitializer.fromCompoundToList(t1)){
+				if(firstAgent == null){
+					firstAgent = t2.toString();
+					partition.addElement(t2.toString());
+				} else{
+					partition.addConstraint(firstAgent, t2.toString());
+				}
+			}
+		}
+		return partition;
+	}
 	
 	@Override
 	public String toString(){
