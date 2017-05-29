@@ -31,7 +31,7 @@ public class Partition<T> implements Iterable<Set<T>>{
 	 * 
 	 * @throws NullPointerException if partition is null
 	 */
-	public Partition(List<List<? extends T>> partition){
+	public Partition(List<List<T>> partition){
 		if(partition == null){
 			throw new NullPointerException("partition must not be null");
 		}
