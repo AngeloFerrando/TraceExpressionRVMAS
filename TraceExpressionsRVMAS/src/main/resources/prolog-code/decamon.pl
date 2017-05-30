@@ -52,9 +52,9 @@
 %%%%%%%%%%%%%%%%%%%   Predicates used by JAVA   %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-decAMonJADE(MMsPartitions) :-
-  trace_expression(T),
-  decAMon(T, MsPartitions),
+decAMonJADE(MMsPartitions, ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  decAMon(T, MsPartitions, ProtocolName),
   generate_MMS(MsPartitions, MMsPartitions).
 
 
@@ -65,53 +65,53 @@ decAMonJADE(MMsPartitions) :-
 % involved_type unifies the second argument with the set containing all agents involved
 % in the interaction type passed as first argument
 % Example: involved_type(msg1, [alice, bob]).
-involved_type(IntType, InvolvedAgents) :-
-  findall(Agent, (match(msg(_, sender(Agent), _, _), IntType); match(msg(_, _, receiver(Agent), _), IntType)), Aux),
+involved_type(IntType, InvolvedAgents, ProtocolName) :-
+  findall(Agent, (match(ProtocolName, msg(_, sender(Agent), _, _), IntType); match(ProtocolName, msg(_, _, receiver(Agent), _), IntType)), Aux),
   list_to_set(Aux, InvolvedAgents).
 
-involved(InvolvedAgents) :-
-  trace_expression(T),
-  involved(T, InvolvedAgents).
+involved(InvolvedAgents, ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  involved(T, InvolvedAgents, ProtocolName).
 
 % given a trace expression, involved unifies the second argument with the set
 % containing all agents involved in the trace expression
 % Example: involved((msg1:epsilon|msg2:epsilon), [alice, bob, charlie, david]).
-involved(T, InvolvedAgents) :-
+involved(T, InvolvedAgents, ProtocolName) :-
   empty_assoc(A),
-  involved(T, InvolvedAgents, A).
+  involved(T, InvolvedAgents, A, ProtocolName).
 % auxiliary predicate with the third argument to manage the coinduction
-involved(T, [], A) :-
+involved(T, [], A, _) :-
   get_assoc(T, A, _), !.
-involved(epsilon, [], _). % no agents involved in empty trace expression
-involved(IntType:T, InvolvedAgents, A) :-
+involved(epsilon, [], _, _). % no agents involved in empty trace expression
+involved(IntType:T, InvolvedAgents, A, ProtocolName) :-
   put_assoc(IntType:T, A, _, A1),
-  involved(T, InvolvedT, A1),
-  involved_type(IntType, InvolvedIntType), % get the agents involved in the interaction type
+  involved(T, InvolvedT, A1, ProtocolName),
+  involved_type(IntType, InvolvedIntType, ProtocolName), % get the agents involved in the interaction type
   union(InvolvedT, InvolvedIntType, InvolvedAgents). % do the union with the agents involved in T
-involved(T1\/T2, InvolvedAgents, A) :- % propagation
+involved(T1\/T2, InvolvedAgents, A, ProtocolName) :- % propagation
   put_assoc(T1\/T2, A, _, A1),
-  involved(T1, Involved1, A1),
-  involved(T2, Involved2, A1),
+  involved(T1, Involved1, A1, ProtocolName),
+  involved(T2, Involved2, A1, ProtocolName),
   union(Involved1, Involved2, InvolvedAgents).
-involved(T1|T2, InvolvedAgents, A) :- % propagation
+involved(T1|T2, InvolvedAgents, A, ProtocolName) :- % propagation
   put_assoc(T1|T2, A, _, A1),
-  involved(T1, Involved1, A1),
-  involved(T2, Involved2, A1),
+  involved(T1, Involved1, A1, ProtocolName),
+  involved(T2, Involved2, A1, ProtocolName),
   union(Involved1, Involved2, InvolvedAgents).
-involved(T1*T2, InvolvedAgents, A) :- % propagation
+involved(T1*T2, InvolvedAgents, A, ProtocolName) :- % propagation
   put_assoc(T1*T2, A, _, A1),
-  involved(T1, Involved1, A1),
-  involved(T2, Involved2, A1),
+  involved(T1, Involved1, A1, ProtocolName),
+  involved(T2, Involved2, A1, ProtocolName),
   union(Involved1, Involved2, InvolvedAgents).
-involved(T1/\T2, InvolvedAgents, A) :- % propagation
+involved(T1/\T2, InvolvedAgents, A, ProtocolName) :- % propagation
   put_assoc(T1/\T2, A, _, A1),
-  involved(T1, Involved1, A1),
-  involved(T2, Involved2, A1),
+  involved(T1, Involved1, A1, ProtocolName),
+  involved(T2, Involved2, A1, ProtocolName),
   union(Involved1, Involved2, InvolvedAgents).
-involved(IntType>>T, InvolvedAgents, A) :- % propagation
+involved(IntType>>T, InvolvedAgents, A, ProtocolName) :- % propagation
   put_assoc(IntType>>T, A, _, A1),
-  involved(T, InvolvedT, A1),
-  involved_type(IntType, InvolvedIntType),
+  involved(T, InvolvedT, A1, ProtocolName),
+  involved_type(IntType, InvolvedIntType, ProtocolName),
   union(InvolvedT, InvolvedIntType, InvolvedAgents).
 
 % first_it unifies the second argument with the set of interaction types which are
@@ -248,26 +248,26 @@ shuffle([Set|T], [E|T1]) :-
 
 % distribute unifies the second argument with one among the many possible Minimal Monitoring-Safe
 % partitions which can be used to distribute the monitoring process, preserving the global AIP semantics
-distribute(T, Partition) :-
+distribute(T, Partition, ProtocolName) :-
   empty_assoc(Assoc),
-  involved(T, InvolvedAgents),
+  involved(T, InvolvedAgents, ProtocolName),
   findall([A], member(A, InvolvedAgents), InvolvedAgents1),
-  distribute(T, Partition, Assoc, InvolvedAgents1).
-distribute(T, Agents, Assoc, Agents) :-
+  distribute(T, Partition, Assoc, InvolvedAgents1, ProtocolName).
+distribute(T, Agents, Assoc, Agents, _) :-
   get_assoc(T, Assoc, _), !.
-distribute(epsilon, Agents, _, Agents). % the empty protocol can be distributed on each agent
-distribute(IntType:T, P, Assoc, Agents) :-
+distribute(epsilon, Agents, _, Agents, _). % the empty protocol can be distributed on each agent
+distribute(IntType:T, P, Assoc, Agents, ProtocolName) :-
   not(get_assoc(T, Assoc, _)),
-  involved_type(IntType, InvolvedAgents1),
+  involved_type(IntType, InvolvedAgents1, ProtocolName),
   first_it(T, FirstIntTypes),
   findall(InvolvedAgents2, % find all agent sets with empty intersection with the agents involved in the interaction type
   (member(FirstIntType, FirstIntTypes),
-   involved_type(FirstIntType, InvolvedAgents2),
+   involved_type(FirstIntType, InvolvedAgents2, ProtocolName),
    intersection(InvolvedAgents1, InvolvedAgents2, [])), InvolvedAgents2LAux),
   list_to_set(InvolvedAgents2LAux, InvolvedAgents2L),
   InvolvedAgents2L \== [], !, % the connectedness for sequence is not satisfied
   put_assoc(IntType:T, Assoc, _, Assoc1),
-  distribute(T, P1, Assoc1, Agents),
+  distribute(T, P1, Assoc1, Agents, ProtocolName),
   findall(Set, % check if the condition is already satisfied by the P1 partition
   (member(E1, InvolvedAgents1),
    shuffle(InvolvedAgents2L, S1),
@@ -283,25 +283,25 @@ distribute(IntType:T, P, Assoc, Agents) :-
     union([InvolvedAgents2b], P1, Ps), % add the new constraint
     fuse_partitions(Ps, P)
     )).
-distribute(IntType:T, P, Assoc, Agents) :-
+distribute(IntType:T, P, Assoc, Agents, ProtocolName) :-
   put_assoc(IntType:T, Assoc, _, Assoc1),
-  distribute(T, P, Assoc1, Agents).
-distribute(T1\/T2, P, Assoc, Agents) :-
+  distribute(T, P, Assoc1, Agents, ProtocolName).
+distribute(T1\/T2, P, Assoc, Agents, ProtocolName) :-
   first_it(T1, FirstIntTypes1),
   first_it(T2, FirstIntTypes2),
   % find all couples of set of agents with empty intersection
   findall((FirstInvolvedAgents1, FirstInvolvedAgents2),
   (member(FirstIntType1, FirstIntTypes1),
    member(FirstIntType2, FirstIntTypes2),
-   involved_type(FirstIntType1, FirstInvolvedAgents1),
-   involved_type(FirstIntType2, FirstInvolvedAgents2),
+   involved_type(FirstIntType1, FirstInvolvedAgents1, ProtocolName),
+   involved_type(FirstIntType2, FirstInvolvedAgents2, ProtocolName),
    intersection(FirstInvolvedAgents1, FirstInvolvedAgents2, [])
   ),
   Constraints),
   Constraints \== [], !, % the unique point of choice condition is not satisfied
   put_assoc(T1\/T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, Ps1),
   findall((C1,C2),
@@ -345,33 +345,33 @@ distribute(T1\/T2, P, Assoc, Agents) :-
          (member(A1, C2), member(A2, C2), A1 \== A2, member(Set, P), subset([A1,A2], Set)))))
       , [])
     )).
-distribute(T1\/T2, P, Assoc, Agents) :-
+distribute(T1\/T2, P, Assoc, Agents, ProtocolName) :-
   put_assoc(T1\/T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, P).
-distribute(T1|T2, P, Assoc, Agents) :-
+distribute(T1|T2, P, Assoc, Agents, ProtocolName) :-
   put_assoc(T1|T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, P).
-distribute(T1*T2, P, Assoc, Agents) :- % is the same as \/, with last and first instead of first and first
+distribute(T1*T2, P, Assoc, Agents, ProtocolName) :- % is the same as \/, with last and first instead of first and first
   last_it(T1, LastIntTypes),
   first_it(T2, FirstIntTypes),
   findall((LastInvolvedAgents, FirstInvolvedAgents),
   (member(LastIntType, LastIntTypes),
    member(FirstIntType, FirstIntTypes),
-   involved_type(LastIntType, LastInvolvedAgents),
-   involved_type(FirstIntType, FirstInvolvedAgents),
+   involved_type(LastIntType, LastInvolvedAgents, ProtocolName),
+   involved_type(FirstIntType, FirstInvolvedAgents, ProtocolName),
    intersection(LastInvolvedAgents, FirstInvolvedAgents, [])
   ),
   Constraints),
   Constraints \== [], !,
   put_assoc(T1*T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, Ps1),
   findall((C1,C2),
@@ -415,16 +415,16 @@ distribute(T1*T2, P, Assoc, Agents) :- % is the same as \/, with last and first 
         (member(A1, C2), member(A2, C2), A1 \== A2, member(Set, P), subset([A1,A2], Set)))))
      , [])
     )).
-distribute(T1*T2, P, Assoc, Agents) :-
+distribute(T1*T2, P, Assoc, Agents, ProtocolName) :-
   put_assoc(T1*T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, P).
-distribute(T1/\T2, P, Assoc, Agents) :-
+distribute(T1/\T2, P, Assoc, Agents, ProtocolName) :-
   put_assoc(T1/\T2, Assoc, _, Assoc1),
-  distribute(T1, P1, Assoc1, Agents),
-  distribute(T2, P2, Assoc1, Agents),
+  distribute(T1, P1, Assoc1, Agents, ProtocolName),
+  distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, P).
 
@@ -462,23 +462,23 @@ pretty_print_list([H|[]]) :-
 % DecOne %
 %%%%%%%%%%
 
-decOne_print(T, P) :-
-  involved(T, InvolvedAgents),
-  pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P), pretty_print(P).
+% decOne_print(T, P) :-
+%   involved(T, InvolvedAgents),
+%   pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P), pretty_print(P).
 
-decOne(P) :-
-  trace_expression(T),
-  decOne(T, P).
-decOne(T, P) :-
-  involved(T, InvolvedAgents),
-  pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P).
+decOne(P, ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  decOne(T, P, ProtocolName).
+decOne(T, P, ProtocolName) :-
+  involved(T, InvolvedAgents, ProtocolName),
+  pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P, ProtocolName).
 
 %%%%%%%%%%%
 % DecAMon %
 %%%%%%%%%%%
 
-decAMon(T, Ps) :-
-  findall(P, decOne(T, P), Ps).
+decAMon(T, Ps, ProtocolName) :-
+  findall(P, decOne(T, P, ProtocolName), Ps).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DecAMon Post Processing %
@@ -615,36 +615,36 @@ count_singleton_groups(Prev, [H|T], Singleton) :-
      count_singleton_groups(Prev, T, Singleton)).
 
 
-critical_point(IntType:T, Constraints) :-
-  involved_type(IntType, InvolvedAgents1),
+critical_point(IntType:T, Constraints, ProtocolName) :-
+  involved_type(IntType, InvolvedAgents1, ProtocolName),
   first_it(T, FirstIntTypes),
   findall((InvolvedAgents1, InvolvedAgents2), % find all agent sets with empty intersection with the agents involved in the interaction type
   (member(FirstIntType, FirstIntTypes),
-   involved_type(FirstIntType, InvolvedAgents2),
+   involved_type(FirstIntType, InvolvedAgents2, ProtocolName),
    intersection(InvolvedAgents1, InvolvedAgents2, [])), InvolvedAgents2LAux),
   list_to_set(InvolvedAgents2LAux, Constraints),
   Constraints \== [].
-critical_point(T1\/T2, Constraints) :-
+critical_point(T1\/T2, Constraints, ProtocolName) :-
   first_it(T1, FirstIntTypes1),
   first_it(T2, FirstIntTypes2),
   % find all couples of set of agents with empty intersection
   findall((FirstInvolvedAgents1, FirstInvolvedAgents2),
   (member(FirstIntType1, FirstIntTypes1),
    member(FirstIntType2, FirstIntTypes2),
-   involved_type(FirstIntType1, FirstInvolvedAgents1),
-   involved_type(FirstIntType2, FirstInvolvedAgents2),
+   involved_type(FirstIntType1, FirstInvolvedAgents1, ProtocolName),
+   involved_type(FirstIntType2, FirstInvolvedAgents2, ProtocolName),
    intersection(FirstInvolvedAgents1, FirstInvolvedAgents2, [])
   ),
   Constraints),
   Constraints \== [].
-critical_point(T1*T2, Constraints) :-
+critical_point(T1*T2, Constraints, ProtocolName) :-
   last_it(T1, LastIntTypes),
   first_it(T2, FirstIntTypes),
   findall((LastInvolvedAgents, FirstInvolvedAgents),
   (member(LastIntType, LastIntTypes),
    member(FirstIntType, FirstIntTypes),
-   involved_type(LastIntType, LastInvolvedAgents),
-   involved_type(FirstIntType, FirstInvolvedAgents),
+   involved_type(LastIntType, LastInvolvedAgents, ProtocolName),
+   involved_type(FirstIntType, FirstInvolvedAgents, ProtocolName),
    intersection(LastInvolvedAgents, FirstInvolvedAgents, [])
   ),
   Constraints),
@@ -662,135 +662,51 @@ constraints_satisfied(Constraints, P) :-
   SafeConstraints),
   findall(C,(member(C, Constraints), not(member(C, SafeConstraints))), []).
 
-is_monitoring_safe(Partition) :-
-  trace_expression(T),
-  is_monitoring_safe(Partition, T).
-is_monitoring_safe(Partition, T) :-
+is_monitoring_safe(Partition, ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  is_monitoring_safe(Partition, T, ProtocolName).
+is_monitoring_safe(Partition, T, ProtocolName) :-
   empty_assoc(Assoc),
-  involved(T, InvolvedAgents),
+  involved(T, InvolvedAgents, ProtocolName),
   pre_processing(T, T1, InvolvedAgents), !,
-  is_monitoring_safe(Partition, T1, Assoc), !.
+  is_monitoring_safe(Partition, T1, Assoc, ProtocolName), !.
 
-is_monitoring_safe(_, epsilon, _) :- !.
-is_monitoring_safe(_, T, Assoc) :-
+is_monitoring_safe(_, epsilon, _, _) :- !.
+is_monitoring_safe(_, T, Assoc, _) :-
   get_assoc(T, Assoc, _), !.
-is_monitoring_safe(P, IntType:T, Assoc) :-
-  critical_point(IntType:T, Constraints), !,
+is_monitoring_safe(P, IntType:T, Assoc, ProtocolName) :-
+  critical_point(IntType:T, Constraints, ProtocolName), !,
   put_assoc(IntType:T, Assoc, _, Assoc1),
   constraints_satisfied(Constraints, P),
-  is_monitoring_safe(P, T, Assoc1).
-is_monitoring_safe(P, IntType:T, Assoc) :-
+  is_monitoring_safe(P, T, Assoc1, ProtocolName).
+is_monitoring_safe(P, IntType:T, Assoc, ProtocolName) :-
   put_assoc(IntType:T, Assoc, _, Assoc1),
-  is_monitoring_safe(P, T, Assoc1).
-is_monitoring_safe(P, T1\/T2, Assoc) :-
-  critical_point(T1\/T2, Constraints), !,
+  is_monitoring_safe(P, T, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1\/T2, Assoc, ProtocolName) :-
+  critical_point(T1\/T2, Constraints, ProtocolName), !,
   put_assoc(T1\/T2, Assoc, _, Assoc1),
   constraints_satisfied(Constraints, P),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-is_monitoring_safe(P, T1\/T2, Assoc) :-
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1\/T2, Assoc, ProtocolName) :-
   put_assoc(T1\/T2, Assoc, _, Assoc1),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-is_monitoring_safe(P, T1|T2, Assoc) :-
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1|T2, Assoc, ProtocolName) :-
   put_assoc(T1|T2, Assoc, _, Assoc1),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-is_monitoring_safe(P, T1*T2, Assoc) :-
-  critical_point(T1*T2, Constraints), !,
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1*T2, Assoc, ProtocolName) :-
+  critical_point(T1*T2, Constraints, ProtocolName), !,
   put_assoc(T1*T2, Assoc, _, Assoc1),
   constraints_satisfied(Constraints, P),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-is_monitoring_safe(P, T1*T2, Assoc) :-
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1*T2, Assoc, ProtocolName) :-
   put_assoc(T1*T2, Assoc, _, Assoc1),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-is_monitoring_safe(P, T1/\T2, Assoc) :-
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, T1/\T2, Assoc, ProtocolName) :-
   put_assoc(T1/\T2, Assoc, _, Assoc1),
-  is_monitoring_safe(P, T1, Assoc1),
-  is_monitoring_safe(P, T2, Assoc1).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%    Testing Predicates   %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-test :-
-open('./tests.txt', append, Str),
-tell(Str),
-test(aip1),
-flush_output(Str),
-test(aip2),
-flush_output(Str),
-test(aip3),
-flush_output(Str),
-test(aip4),
-flush_output(Str),
-test(aip5),
-flush_output(Str),
-test(aip6),
-flush_output(Str),
-test(aip7),
-flush_output(Str),
-test(aip8),
-flush_output(Str),
-test(aip9),
-flush_output(Str),
-test(alt_bit_2),
-flush_output(Str),
-test(alt_bit_4),
-flush_output(Str),
-test(alt_bit_6),
-told.
-
-further_test :-
-open('./further_tests.txt', append, Str),
-tell(Str),
-decAMon(aip1, Ps),
-pretty_print_all_part(Ps),
-together(Ps, [alice, bob], Together),
-length(Together, L),
-write('\n\nNumber of MMSs in aip1 where alice and bob are together: '),write(L), write('\n'),
-flush_output(Str),
-disjoint(Ps, [alice, bob], Disj),
-length(Disj, D),
-write('Number of MMSs in aip1 where alice and bob are disjoint: '),write(D), write('\n'),
-flush_output(Str),
-decAMon(aip5, Ps5),
-together(Ps5, [b, c, d], Together5),
-length(Together5, L5),
-write('\n\nNumber of MMSs in aip5 where b, c, d are together: '),write(L5), write('\n'),
-flush_output(Str),
-disjoint(Ps5, [b, c, d], Disj5),
-length(Disj5, D5),
-write('Number of MMSs in aip5 where b, c, d are disjoint: '),write(D5), write('\n'),
-flush_output(Str),
-together(Ps5, [b, m], Together6),
-length(Together6, L6),
-write('Number of MMSs in aip5 where b, m are together: '),write(L6), write('\n'),
-flush_output(Str),
-disjoint(Ps5, [b, m], Disj6),
-length(Disj6, D6),
-write('Number of MMSs in aip5 where b, m are disjoint: '),write(D6), write('\n'),
-flush_output(Str),
-told.
-
-test(PrName) :-
-   write('\n\n**** '), write(PrName),  write(' ****\n'),
-   statistics(walltime, [_ | [_]]),
-   time(decAMon(PrName, Ps)),
-   statistics(walltime, [_ | [ExecutionTime1]]),
-   write('Execution of DecAMon took '), write(ExecutionTime1), write(' ms.'),
-   length(Ps, L),
-   write('\nNumber of MSs: '), write(L), write('\n'),
-   statistics(walltime, [_ | [_]]),
-   time(generate_MMS(Ps, MMSs)),
-   statistics(walltime, [_ | [ExecutionTime2]]),
-   write('Execution of generate_MMS took '), write(ExecutionTime2), write(' ms.'),
-   length(MMSs, L1),
-   write('\nNumber of MMSs: '), write(L1), write('\n'),
-   %pretty_print_all_part(MMSs),
-   max_partition_cardinality_it(MMSs, 1, 10),
-   max_group_cardinality_it(MMSs, 1, 10),
-   min_singleton_it(MMSs, 1, 10).
+  is_monitoring_safe(P, T1, Assoc1, ProtocolName),
+  is_monitoring_safe(P, T2, Assoc1, ProtocolName).

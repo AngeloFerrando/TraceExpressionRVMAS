@@ -43,11 +43,11 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.jar.Attributes.Name;
 
 import org.jpl7.Query;
 
 import it.unige.dibris.TExpRVMAS.core.Monitor;
+import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import jade.content.AgentAction;
 import jade.content.onto.basic.Action;
 import jade.content.onto.basic.Done;
@@ -80,7 +80,6 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.StringACLCodec;
 import jade.proto.SimpleAchieveREInitiator;
 import jade.proto.SimpleAchieveREResponder;
-import jade.tools.ToolAgent;
 import jade.util.ExtendedProperties;
 import jade.util.Logger;
 import jade.util.leap.ArrayList;
@@ -90,8 +89,8 @@ import jade.util.leap.List;
 /* public class Sniffer */
 public class Sniffer extends Monitor {
 	
-	public Sniffer(String name) {
-		super(name);
+	public Sniffer(String name, TraceExpression tExp) {
+		super(name, tExp);
 	}
 
 		FileWriter fstream;
@@ -453,7 +452,7 @@ public class Sniffer extends Monitor {
                 else
                     sniffed_agents =  sniffed_agents.substring(0, sniffed_agents.length()-1) + "]";
                 monitorID = ((String)arguments[0]).substring(0, ((String)arguments[0]).length()-4);
-		String t1 = "initialize('" + arguments[0] + "'," + "'" + monitorID + "'," + sniffed_agents + ")";
+		String t1 = "initialize('" + arguments[0] + "'," + "'" + monitorID + "'," + sniffed_agents + ", " + getTraceExpression().getProtocolName() + ")";
                 System.out.println(t1);
 		Query q1 = new Query(t1);
                 q1.hasSolution();

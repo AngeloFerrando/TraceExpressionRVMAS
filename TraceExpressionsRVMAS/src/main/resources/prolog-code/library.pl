@@ -12,48 +12,48 @@ debug(on).
 /* Transition rules */
 
 % next transition function (parametric version)
-next(ET:T, E, T, S) :-
+next(ProtocolName, ET:T, E, T, S) :-
   genvar(ET, ETFree, S1),
-  match(E, ETFree),
+  match(ProtocolName, E, ETFree),
   clear(S1, S).
-next(T1\/_, E, T2, S) :-
-  next(T1, E, T2, S).
-next(_\/T1, E, T2, S) :-
-  !, next(T1, E, T2, S).
-next(T1|T2, E, T, S) :-
-  next(T1, E, T3, S),
+next(ProtocolName, T1\/_, E, T2, S) :-
+  next(ProtocolName, T1, E, T2, S).
+next(ProtocolName, _\/T1, E, T2, S) :-
+  !, next(ProtocolName, T1, E, T2, S).
+next(ProtocolName, T1|T2, E, T, S) :-
+  next(ProtocolName, T1, E, T3, S),
   fork(T3, T2, T).
-next(T1|T2, E, T, S) :-
-  !, next(T2, E, T3, S),
+next(ProtocolName, T1|T2, E, T, S) :-
+  !, next(ProtocolName, T2, E, T3, S),
   fork(T1, T3, T).
-next(T1*T2, E, T, S) :-
-  next(T1, E, T3, S),
+next(ProtocolName, T1*T2, E, T, S) :-
+  next(ProtocolName, T1, E, T3, S),
   concat(T3, T2, T).
-next(T1*T2, E, T3, S) :-
+next(ProtocolName, T1*T2, E, T3, S) :-
   !, may_halt(T1),
-  next(T2, E, T3, S).
-next(T1/\T2, E, T, S) :-
-  !, next(T1, E, T3, S1),
-  next(T2, E, T4, S2),
+  next(ProtocolName, T2, E, T3, S).
+next(ProtocolName, T1/\T2, E, T, S) :-
+  !, next(ProtocolName, T1, E, T3, S1),
+  next(ProtocolName, T2, E, T4, S2),
   merge(S1, S2, S),
   conj(T3, T4, T).
-next(ET>>T, E, ET>>T1, S) :-
+next(ProtocolName, ET>>T, E, ET>>T1, S) :-
   event(E),
   genvar(ET, ETFree, S1),
-  (match(E, ETFree) *->
+  (match(ProtocolName, E, ETFree) *->
     (clear(S1, S2),
-     next(T, E, T1, S3),
+     next(ProtocolName, T, E, T1, S3),
      merge(S2, S3, S));
      (T=T1)).
-next(var(X, T), E, T2, S) :-
-  next(T, E, T1, S1),
+next(ProtocolName, var(X, T), E, T2, S) :-
+  next(ProtocolName, T, E, T1, S1),
   (syntactic_member_couples((X=V), S1) ->
     (substitution(T1, (X=V), T2),% !,
      remove((X=V), S1, S));
     (T2 = var(X, T1), S = S1)).
 % (main)
-next(T, E, T1) :-
-  next(T, E, T1, S), S = [].
+next(ProtocolName, T, E, T1) :-
+  next(ProtocolName, T, E, T1, S), S = [].
 
 may_halt(epsilon) :- !.
 may_halt(T1\/T2) :- (may_halt(T1), !; may_halt(T2)).
@@ -242,8 +242,8 @@ accept(N,T1,[E|L],T3) :-
   accept(M,T2,L,T3).
 
 
-is_contractive() :-
-  trace_expression(T),
+is_contractive(ProtocolName) :-
+  trace_expression(ProtocolName, T),
   is_contractive(T).
 is_contractive(T) :-
   empty_assoc(A),
@@ -285,13 +285,13 @@ is_contractive(ET>>T, Depth, DeepestSeq, Assoc) :-
 /* 							DYNAMIC PROJECTION				 			      */
 /* ************************************************************************** */
 
-project(T, ProjectedAgents, ProjectedType) :-
+project(ProtocolName, T, ProjectedAgents, ProjectedType) :-
 	empty_assoc(A),
-	project(A, 0, -1, T, ProjectedAgents, ProjectedType).
+	project(ProtocolName, A, 0, -1, T, ProjectedAgents, ProjectedType).
 
-project(_Assoc, _Depth, _DeepestSeq, epsilon, _ProjectedAgents, epsilon):- !.
+project(_, _Assoc, _Depth, _DeepestSeq, epsilon, _ProjectedAgents, epsilon):- !.
 
-project(Assoc, _Depth, DeepestSeq, Type, _ProjectedAgents, ProjectedType) :-
+project(_, Assoc, _Depth, DeepestSeq, Type, _ProjectedAgents, ProjectedType) :-
 get_assoc(Type,Assoc,(AssocProjType,LoopDepth)),!,(LoopDepth =< DeepestSeq -> ProjectedType=AssocProjType; ProjectedType=epsilon).
 /*
 project(Assoc, Depth, DeepestSeq, (IntType:Type1), ProjectedAgents, ProjectedType) :-
@@ -302,58 +302,58 @@ put_assoc((IntType:Type1),Assoc,(ProjectedType,Depth),NewAssoc),
     IncDepth is Depth+1,project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType:ProjectedType1);
     project(NewAssoc,Depth,DeepestSeq,Type1,ProjectedAgents,ProjectedType)).
 */
-project(Assoc, Depth, DeepestSeq, (IntType:Type1), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (IntType:Type1), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((IntType:Type1),Assoc,(ProjectedType,Depth),NewAssoc),
-(involves(IntType, ProjectedAgents) ->
-    IncDepth is Depth+1,project(NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType:ProjectedType1);
-    project(NewAssoc,Depth,DeepestSeq,Type1,ProjectedAgents,ProjectedType)).
+(involves(ProtocolName, IntType, ProjectedAgents) ->
+    IncDepth is Depth+1,project(ProtocolName, NewAssoc,IncDepth,Depth,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType:ProjectedType1);
+    project(ProtocolName, NewAssoc,Depth,DeepestSeq,Type1,ProjectedAgents,ProjectedType)).
 
-project(Assoc, Depth, DeepestSeq, (Type1|Type2), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (Type1|Type2), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((Type1|Type2),Assoc,(ProjectedType,Depth),NewAssoc),
 IncDepth is Depth+1,
-project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
-project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
 ProjectedType=(ProjectedType1|ProjectedType2).
 
-project(Assoc, Depth, DeepestSeq, (Type1\/Type2), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (Type1\/Type2), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((Type1\/Type2),Assoc,(ProjectedType,Depth),NewAssoc),
 IncDepth is Depth+1,
-project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
-project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
 ProjectedType=(ProjectedType1\/ProjectedType2).
 
-project(Assoc, Depth, DeepestSeq, (Type1/\Type2), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (Type1/\Type2), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((Type1/\Type2),Assoc,(ProjectedType,Depth),NewAssoc),
 IncDepth is Depth+1,
-project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
-project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
 ProjectedType=(ProjectedType1/\ProjectedType2).
 
-project(Assoc, Depth, DeepestSeq, (Type1*Type2), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (Type1*Type2), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((Type1*Type2),Assoc,(ProjectedType,Depth),NewAssoc),
 IncDepth is Depth+1,
-project(NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
-project(NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
 ProjectedType=(ProjectedType1*ProjectedType2).
 
-project(Assoc, Depth, DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
+project(ProtocolName, Assoc, Depth, DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
 !,
 put_assoc((IntType>>Type1),Assoc,(ProjectedType,Depth),NewAssoc),
 %(involves(IntType, ProjectedAgents) ->
 IncDepth is Depth+1,
-project(NewAssoc,IncDepth,DeepestSeq,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
+project(ProtocolName, NewAssoc,IncDepth,DeepestSeq,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
 
 /****************************************************************************/
 /* 	  INVOLVES PREDICATE: can be redefined to consider agent roles      */
 /****************************************************************************/
 
-involves(IntType, List) :-
-match(Message, IntType),
+involves(ProtocolName, IntType, List) :-
+match(ProtocolName, Message, IntType),
 Message =.. [msg, performative(_P), sender(Sender), receiver(Receiver) | _T],
 (member(Sender, List);
 member(Receiver, List)).
@@ -365,31 +365,31 @@ member(Receiver, List)).
 
 
 
-initialize(LogFileName, MonitorID, Agents) :-
-% The argument of diff (milliseconds after which we assume that a message is "old" enough, and no older messages will arrive after) should be the same used by the progress agent to call the "progress" goal
-recorda(MonitorID, diff(0)),
-trace_expression(T),
-project(T, Agents, ProjectedType),
-clean_and_record(MonitorID, current_state(ProjectedType)),
-clean_and_record(MonitorID, message_list([])),
-open(LogFileName,append,Str),
-recorda(MonitorID, str(Str)),
-recorda(MonitorID, agents(Agents)),
-write_log(MonitorID, 'Monitoring protocol\n'), write_log(MonitorID, ProjectedType),
-write_log(MonitorID,'\n\n'), !.
+initialize(LogFileName, MonitorID, Agents, ProtocolName) :-
+  % The argument of diff (milliseconds after which we assume that a message is "old" enough, and no older messages will arrive after) should be the same used by the progress agent to call the "progress" goal
+  recorda(MonitorID, diff(0)),
+  trace_expression(ProtocolName, T),
+  project(ProtocolName, T, Agents, ProjectedType),
+  clean_and_record(MonitorID, current_state(ProtocolName, ProjectedType)),
+  clean_and_record(MonitorID, message_list([])),
+  open(LogFileName,append,Str),
+  recorda(MonitorID, str(Str)),
+  recorda(MonitorID, agents(Agents)),
+  write_log(MonitorID, 'Monitoring protocol\n'), write_log(MonitorID, ProjectedType),
+  write_log(MonitorID,'\n\n'), !.
 
 remember(MonitorID, Message) :-
-Message =.. Message2List,
-last(Message2List, time-stamp(TS)),
-!,
-recorded(MonitorID, message_list(List), _),
-insert_in_order((TS, Message), List, NewList),
-clean_and_record(MonitorID, message_list(NewList)).
+  Message =.. Message2List,
+  last(Message2List, time-stamp(TS)),
+  !,
+  recorded(MonitorID, message_list(List), _),
+  insert_in_order((TS, Message), List, NewList),
+  clean_and_record(MonitorID, message_list(NewList)).
 
 remember(MonitorID, Message) :-
-recorded(MonitorID, message_list(List), _),
-append(List, [(z, Message)], NewList),
-clean_and_record(MonitorID, message_list(NewList)).
+  recorded(MonitorID, message_list(List), _),
+  append(List, [(z, Message)], NewList),
+  clean_and_record(MonitorID, message_list(NewList)).
 
 verify(MonitorID, _TS) :-
   recorded(MonitorID, message_list([]), _), !,
@@ -413,14 +413,14 @@ insert_in_order((TS, Message), [(TSH, MessageH)|Tail], [(TSH, MessageH)|OrderedL
 
 
 type_check_aux(MonitorID, Message) :-
-   recorded(MonitorID, current_state(LastState), Ref),
-   next(LastState, Message, NewState), !,
+   recorded(MonitorID, current_state(ProtocolName, LastState), Ref),
+   next(ProtocolName, LastState, Message, NewState), !,
    write_log(MonitorID,'\n'), write_log(MonitorID,'Message\n'), write_log(MonitorID,Message), write_log(MonitorID,'\nleads from state \n'), write_log(MonitorID,LastState), write_log(MonitorID,'\nto state\n'), write_log(MonitorID,NewState), write_log(MonitorID,'\n'),
    erase(Ref),
-   recorda(MonitorID, current_state(NewState)).
+   recorda(MonitorID, current_state(ProtocolName, NewState)).
 
 type_check_aux(MonitorID, Message) :-
-recorded(MonitorID, current_state(LastState), Ref),
+recorded(MonitorID, current_state(_, LastState), Ref),
 write_log(MonitorID,'\n'), write_log(MonitorID,'*** DYNAMIC TYPE-CHECKING ERROR ***\nMessage '), write_log(MonitorID,Message), write_log(MonitorID,' cannot be accepted in the current state '), write_log(MonitorID,LastState), erase(Ref), fail.
 
 type_check_list(_, [], _Max_TS,  []).
@@ -437,13 +437,13 @@ type_check_list(MonitorID, [(TS, Msg)|T], Max_TS, Remainder) :-
 
 type_check_list(_, List, _Max_TS, List).
 
-clean_and_record(Key, current_state(InitialState)) :-
-   recorded(Key, current_state(_), Ref), !,
+clean_and_record(Key, current_state(ProtocolName, InitialState)) :-
+   recorded(Key, current_state(_, _), Ref), !,
    erase(Ref),
-   recorda(Key, current_state(InitialState)).
+   recorda(Key, current_state(ProtocolName, InitialState)).
 
-clean_and_record(Key, current_state(InitialState)) :-
-   recorda(Key, current_state(InitialState)).
+clean_and_record(Key, current_state(ProtocolName, InitialState)) :-
+   recorda(Key, current_state(ProtocolName, InitialState)).
 
 clean_and_record(Key, message_list(L)) :-
   recorded(Key, message_list(_), Ref), !,

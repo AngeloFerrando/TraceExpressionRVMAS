@@ -1,11 +1,16 @@
 package it.unige.dibris.TExpRVMAS.core.protocol;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Random;
 import org.jpl7.Atom;
 import org.jpl7.Compound;
@@ -16,6 +21,7 @@ import org.jpl7.Term;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.exception.NoMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.exception.TraceExpressionFileFormatException;
 import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNotContractiveException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
@@ -31,26 +37,56 @@ public class TraceExpression {
 	/**
 	 * File containing the trace expression definition
 	 */
-	private File tExpFile;
+	//private File tExpFile;
 
+	private String protocolName;
+	
 	/**
 	 * Constructor of the TraceExpression class
 	 * @param pathToFile is the path to the file containing the trace expression definition
-	 *
+	 * 
+	 * @throws IOException if the file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 * @throws NullPointerException if pathToFile is null
-	 * @throws FileNotFoundException if the file is not found
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
 	 */
-	public TraceExpression(String pathToFile) throws FileNotFoundException{
+	public TraceExpression(String pathToFile) throws IOException{
 		if(pathToFile == null){
 			throw new NullPointerException("pathToFile must not be null");
 		}
-		tExpFile = new File(pathToFile);
+		File tExpFile = new File(pathToFile);
 		if(!tExpFile.exists()){ 
 		    throw new FileNotFoundException(pathToFile + " file not found");
 		}
-		load();
+		
+		BufferedReader tExpFileReader = new BufferedReader(new FileReader(tExpFile));
+		Optional<String> traceExpressionLine = tExpFileReader.lines().filter(s -> s.startsWith("trace_expression(")).findFirst();
+		if(!traceExpressionLine.isPresent() || !traceExpressionLine.get().matches("trace_expression((.+)(\\s*),(\\s*)(.+))")){
+			tExpFileReader.close();
+			throw new TraceExpressionFileFormatException("The trace expression file must contain the trace_expression(protocol_name, T) predicate");
+		}
+		
+		String aux = traceExpressionLine.get();
+		tExpFileReader.close();
+		protocolName = aux.substring(aux.indexOf('(') + 1, aux.indexOf(','));
+		FileWriter fw = new FileWriter(pathToFile + ".tmp");
+		try{
+			tExpFileReader = new BufferedReader(new FileReader(tExpFile));
+			Iterator<String> it = tExpFileReader.lines().map(s -> {
+				return s.contains("match(") ? s.replace("match(", "match(" + protocolName + ", ") : s;
+			}).iterator();
+		
+			while(it.hasNext()){
+				fw.write(it.next() + "\n");
+			}
+		} catch(IOException e){
+			throw e;
+		} finally{
+			fw.close();
+			tExpFileReader.close();
+		}
+		
+		load(pathToFile + ".tmp");
 	}
 	
 	/**
@@ -59,10 +95,10 @@ public class TraceExpression {
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
 	 */
-	public void load(){
-		JPLInitializer.createAndCheck("retractall(match(_, _))");
-		JPLInitializer.createAndCheck("retractall(trace_expression(_))");
-		JPLInitializer.createAndCheck("consult", new Atom(tExpFile.getAbsolutePath()));
+	public void load(String tExpFilePath){
+		//JPLInitializer.createAndCheck("retractall(match(" + protocolName + ", _, _))");
+		JPLInitializer.createAndCheck("retractall(trace_expression(" + protocolName + ", _))");
+		JPLInitializer.createAndCheck("consult", new Atom(tExpFilePath));
 		if(!isContractive()){
 			throw new TraceExpressionNotContractiveException();
 		}
@@ -116,8 +152,8 @@ public class TraceExpression {
 			throw new NullPointerException("conditions must not be null");
 		}*/
 		List<Partition<String>> mmsPartitions = new ArrayList<>();
-		Query query = JPLInitializer.createAndCheck("decAMonJADE(MMsPartitions)");
-		Compound mmsPartitionsTerm = (Compound) query.oneSolution().get("MMsPartitions");
+		Query query = JPLInitializer.createAndCheck("decAMonJADE(MMsPartitions, " + protocolName + ")");
+		Term mmsPartitionsTerm = query.oneSolution().get("MMsPartitions");
 		for(Term t0 : JPLInitializer.fromCompoundToList(mmsPartitionsTerm)){
 			Partition<String> partition = Partition.extractOnePartitionFromTerm(t0);
 			boolean toAdd = true;
@@ -145,7 +181,7 @@ public class TraceExpression {
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
 	public boolean isMonitoringSafe(Partition<String> partition){
-		Query query = new Query("is_monitoring_safe(" + partition + ")");
+		Query query = new Query("is_monitoring_safe(" + partition + ", " + protocolName + ")");
 		boolean res = query.hasSolution();
 		query.close();
 		return res;
@@ -158,7 +194,7 @@ public class TraceExpression {
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
 	private boolean isContractive(){
-		Query query = new Query("is_contractive()");
+		Query query = new Query("is_contractive(" + protocolName + ")");
 		boolean res = query.hasSolution();
 		query.close();
 		return res;
@@ -363,7 +399,8 @@ public class TraceExpression {
 		/*if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
 		}*/
-		Query query = new Query("decOne(MSPartition)");
+
+		Query query = new Query("decOne(MSPartition, " + protocolName + ")");
 		return new Iterable<Partition<String>>() {
 			
 			@Override
@@ -443,6 +480,12 @@ public class TraceExpression {
 			}
 		};
 	}
-	
+
+	/**s
+	 * @return the protocolName
+	 */
+	public String getProtocolName() {
+		return protocolName;
+	}
 	
 }

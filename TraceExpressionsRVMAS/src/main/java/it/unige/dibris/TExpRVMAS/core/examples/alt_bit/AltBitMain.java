@@ -1,6 +1,6 @@
 package it.unige.dibris.TExpRVMAS.core.examples.alt_bit;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import it.unige.dibris.TExpRVMAS.core.Monitor;
 import it.unige.dibris.TExpRVMAS.core.SnifferMonitorFactory;
@@ -16,7 +16,7 @@ import jade.wrapper.StaleProxyException;
 
 public class AltBitMain {
 
-	public static void main(String[] args) throws FileNotFoundException, StaleProxyException, DecentralizedPartitionNotFoundException {
+	public static void main(String[] args) throws StaleProxyException, DecentralizedPartitionNotFoundException, IOException {
 		JPLInitializer.init();
 		
 		TraceExpression tExp = new TraceExpression(args[0]);
@@ -31,10 +31,11 @@ public class AltBitMain {
 		//container.acceptNewAgent("centralizedMonitor", centralizedM);
 		
 		/* Decentralized monitors (random MMS) */
-		//for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(tExp, PartitionType.MinimalMonitoringSafe)){
+		//for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(tExp, PartitionType.MinimalMonitoringSafe, null)){
 		//	container.acceptNewAgent(m.getMonitorName(), m).start();
 		//}
 		
+		/* Decentralized monitors (first MS partition) */
 		Partition<String> partition = tExp.getFirstMonitoringSafePartition(null);
 		for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(tExp, partition)){
 			container.acceptNewAgent(m.getMonitorName(), m).start();
@@ -57,7 +58,24 @@ public class AltBitMain {
 		container.acceptNewAgent("charlie", charlie).start();
 		container.acceptNewAgent("david", david).start();
 		
+		TraceExpression tExp_1 = new TraceExpression(args[1]);
+		Monitor centralizedM = SnifferMonitorFactory.createAndRunCentralizedMonitor(tExp_1, container);
+		container.acceptNewAgent("centralizedMonitor", centralizedM);
 		
+		Sender alice1 = new Sender();
+		alice1.setArguments(new String[] { "bob1", "msg1", "5000" });
+		Receiver bob1 = new Receiver();
+		bob1.setArguments(new String[] { "alice1", "ack1" });
+
+		Sender charlie1 = new Sender();
+		charlie1.setArguments(new String[] { "david1", "msg2", "10000" });
+		Receiver david1 = new Receiver();
+		david1.setArguments(new String[] { "charlie1", "ack2" });
+		
+		container.acceptNewAgent("alice1", alice1).start();
+		container.acceptNewAgent("bob1", bob1).start();
+		container.acceptNewAgent("charlie1", charlie1).start();
+		container.acceptNewAgent("david1", david1).start();
 	}
 
 }

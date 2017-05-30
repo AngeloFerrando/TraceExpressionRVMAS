@@ -1,14 +1,16 @@
 package it.unige.dibris.TExpRVMAS.core;
 
 import java.awt.Color;
-import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.util.Random;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SpringLayout;
@@ -19,12 +21,6 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-import it.unige.dibris.TExpRVMAS.core.monitor.Sniffer;
-import javax.swing.JButton;
-import java.awt.Font;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-
 @SuppressWarnings("serial")
 public class ErrorMessageGUI extends JFrame {
 
@@ -32,28 +28,6 @@ public class ErrorMessageGUI extends JFrame {
 	private JScrollPane scrollPane;
 	private JTextPane textPane;
 	private boolean paused;
-
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					ErrorMessageGUI frame = new ErrorMessageGUI();
-					frame.setVisible(true);
-					Monitor m1 = new Sniffer("m1");
-					frame.addMessageLog(m1, "ciao");
-					Monitor m2 = new Sniffer("m2");
-					frame.addMessageLog(m2, "ciao");
-					Monitor m3 = new Sniffer("m3");
-					frame.addMessageLog(m3, "ciao");
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
 
 	/**
 	 * Create the frame.

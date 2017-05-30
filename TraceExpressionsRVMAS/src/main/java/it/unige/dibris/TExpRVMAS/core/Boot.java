@@ -1,6 +1,6 @@
 package it.unige.dibris.TExpRVMAS.core;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -53,15 +53,12 @@ public class Boot {
 	/**
 	 * It executes the TraceExpressionRVMAS
 	 * 
-	 * @param args 
-	 * trace expression file containing the protocol to verify, and a list of JADE agents to execute/monitor 
-	 * <path_to_trace_expression_file> <jade-agent1> ... <jade-agentN>
-	 * @throws FileNotFoundException if the trace expression file is not found
+	 * @param args to setup the TraceExpressionRVMAS environment
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
 	 * @throws NoMinimalMonitoringSafePartitionFoundException if no minimal monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
+	 * @throws IOException if the trace expression file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 */
-	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws FileNotFoundException, NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException {
+	public static void main(String[] args) throws NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException, IOException {
 		/* Initialize JADE environment */
 		jade.core.Runtime runtime = jade.core.Runtime.instance();
 		Profile profile = new ProfileImpl();
@@ -125,7 +122,7 @@ public class Boot {
 	 * Parse the arguments passed to the Boot main method
 	 * @param args are the arguments passed to the Boot class main that we want to parse
 	 * @return a new Boot object generated starting from the passed arguments
-	 * @throws FileNotFoundException if the trace expression file is not found
+	 * @throws IOException if the trace expression file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 * @throws NullPointerException if <code>args</code> is null
 	 * @throws IllegalArgumentException if arguments do not follow these structure:
 	 * 		-texp path_to_trace_expression_file
@@ -141,7 +138,7 @@ public class Boot {
 	 * @throws JavaLibraryPathException if an error occurred adding the SWI_LIB folder to the java library path
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
-	private static Boot parseArguments(String[] args, AgentContainer container) throws FileNotFoundException{
+	private static Boot parseArguments(String[] args, AgentContainer container) throws IOException{
 		if(args == null){
 			throw new NullPointerException("args must not be null");
 		}

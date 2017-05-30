@@ -42,8 +42,7 @@ public class SnifferMonitorFactory {
 		if(tExp == null){
 			throw new NullPointerException("tExp must not be null");
 		}
-		tExp.load();
-		Sniffer s = new Sniffer("sniffer_monitor_centralized");
+		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp);
 		Query query = new Query("involved(InvolvedAgents)");
 		String agents;
 		if(!query.hasSolution()){
@@ -77,9 +76,8 @@ public class SnifferMonitorFactory {
 		if(tExp == null || container == null){
 			throw new NullPointerException("tExp and container must not be null");
 		}
-		tExp.load();
-		Sniffer s = new Sniffer("sniffer_monitor_centralized");
-		Query query = new Query("involved(InvolvedAgents)");
+		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp);
+		Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
 		String agents;
 		if(!query.hasSolution()){
 			agents = "[]";
@@ -120,7 +118,6 @@ public class SnifferMonitorFactory {
 		if(tExp == null || pType == null){
 			throw new NullPointerException("tExp and pType must not be null");
 		}
-		tExp.load();
 		if(pType == PartitionType.MinimalMonitoringSafe){
 			List<Partition<String>> mmsPartitions = tExp.getMinimalMonitoringSafePartitions(conditions);
 			int random = new Random().nextInt(mmsPartitions.size());
@@ -129,14 +126,14 @@ public class SnifferMonitorFactory {
 			} else if(mmsPartitions.size() == 1 && mmsPartitions.get(0).getNumberConstraints() == 1){
 				throw new DecentralizedPartitionNotFoundException();
 			} else{
-				return createMonitors(mmsPartitions.get(random));
+				return createMonitors(mmsPartitions.get(random), tExp);
 			}
 		} else{
 			Partition<String> msPartition = tExp.getRandomMonitoringSafePartition(conditions);
 			if(msPartition.getNumberConstraints() == 1){
 				throw new DecentralizedPartitionNotFoundException();
 			}	
-			return createMonitors(msPartition);
+			return createMonitors(msPartition, tExp);
 		}
 	}
 	
@@ -156,25 +153,26 @@ public class SnifferMonitorFactory {
 		if(!tExp.isMonitoringSafe(partition)){
 			throw new NotMonitoringSafePartitionException();
 		}
-		return createMonitors(partition);
+		return createMonitors(partition, tExp);
 	}
 	
 	/**
 	 * Auxiliary method used to generate a set of decentralized monitors starting from a given partition
 	 * @param partition to use to generate the decentralized monitors
+	 * @param tExp the Trace Expression to use to generate the monitors
 	 * @return the set of monitors generated
 	 * 
-	 * @throws NullPointerException if <code>partition</code> is null
+	 * @throws NullPointerException if <code>partition</code> or <code>tExp</code> are null
 	 */
-	private static List<Monitor> createMonitors(Partition<String> partition){
-		if(partition == null){
-			throw new NullPointerException("partition must not be null");
+	private static List<Monitor> createMonitors(Partition<String> partition, TraceExpression tExp){
+		if(partition == null || tExp == null){
+			throw new NullPointerException("partition and tExp must not be null");
 		}
 		List<Monitor> monitors = new ArrayList<>();
 		for(Set<String> constraint : partition){
 			/* Sniffer creation */
 			String constraintAux = constraint.toString().replace("[", "").replace("]", "").replace(",", "_").replace(" ", "");
-			Sniffer s = new Sniffer("sniffer_monitor_decentralized_on_" + constraintAux);
+			Sniffer s = new Sniffer("sniffer_monitor_decentralized_on_" + constraintAux, tExp);
 			s.setArguments(new String[]{
 					"sniffer_monitor_decentralized_on_" + constraintAux + ".txt",
 					constraint.toString()
