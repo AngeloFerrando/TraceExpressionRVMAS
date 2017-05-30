@@ -105,6 +105,7 @@ public class Sniffer extends Monitor {
 	private Hashtable preload = null;
 	private ExtendedProperties properties = null;
 	private ArrayList agentsUnderSniff = new ArrayList();
+	public String prolog_msg;
 	public static Lock lock = new ReentrantLock();
 
 	
@@ -223,7 +224,8 @@ public class Sniffer extends Monitor {
 						myGUI.mainPanel.panelcan.canvMess.recMessage(msg);
 					}
 
-					String prolog_msg = MsgParser.format_message(local_epoch, tmp);                                  log_file.println("\nConversion from Jade message");
+					prolog_msg = MsgParser.format_message(local_epoch, tmp);    
+					log_file.println("\nConversion from Jade message");
 					log_file.println(tmp);
                                         log_file.println("to Prolog message");
 					log_file.println(prolog_msg);
@@ -511,7 +513,15 @@ public class Sniffer extends Monitor {
 				Query q = new Query("verify(" +
 						monitorID + ","
 						+ (System.currentTimeMillis() - local_epoch) + ")");
-				q.hasSolution();
+				boolean verify = q.hasSolution();
+				if(isErrorMessageGUIVisible() && prolog_msg != null){
+					if(verify){
+						sendMessageLogToGUI("(" + prolog_msg + ") message has been perceived [CONSISTENT]");
+					} else{
+						sendMessageLogToGUI("ERROR: (" + prolog_msg + ") message has been perceived [INCONSISTENT]");
+					}
+					prolog_msg = null;
+				}
 			}
 		});
 

@@ -1,4 +1,4 @@
-package it.unige.dibris.TExpRVMAS.Exception;
+package it.unige.dibris.TExpRVMAS.exception;
 
 @SuppressWarnings("serial")
 public class JADEContainerInitializationException extends RuntimeException {

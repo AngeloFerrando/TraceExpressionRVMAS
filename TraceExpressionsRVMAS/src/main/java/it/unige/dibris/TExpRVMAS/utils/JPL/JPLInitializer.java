@@ -2,15 +2,20 @@ package it.unige.dibris.TExpRVMAS.utils.JPL;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jpl7.Atom;
 import org.jpl7.JPL;
-import it.unige.dibris.TExpRVMAS.Exception.JPLInitializationException;
 import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
-import it.unige.dibris.TExpRVMAS.Exception.PrologPredicateFailedException;
+
+import it.unige.dibris.TExpRVMAS.exception.EnvironmentVariableNotDefinedException;
+import it.unige.dibris.TExpRVMAS.exception.JPLInitializationException;
+import it.unige.dibris.TExpRVMAS.exception.JavaLibraryPathException;
+import it.unige.dibris.TExpRVMAS.exception.PrologPredicateFailedException;
 
 /**
  * This class handles all the communication between Java and SWI-Prolog through the use of the JPL library.
@@ -21,12 +26,46 @@ import it.unige.dibris.TExpRVMAS.Exception.PrologPredicateFailedException;
 public class JPLInitializer {
 	
 	/**
+	 *  Path to the SWI-Prolog library folder (it is read from the environment variable SWI_LIB) 
+	 */
+	private static String swiplEnvVar;
+	
+	/**
+	 * @return the swiplEnvVar
+	 */
+	public static String getSwiplEnvVar() {
+		return swiplEnvVar;
+	}
+
+	/**
+	 * @param swiplEnvVar the swiplEnvVar to set
+	 */
+	public static void setSwiplEnvVar(String swiplEnvVar) {
+		JPLInitializer.swiplEnvVar = swiplEnvVar;
+	}
+
+	/**
 	 * initialize the JPL environment
 	 * 
 	 * throws PrologException
 	 * @throws FileNotFoundException if library.pl or decamon.pl files are not found
 	 */
 	public static void init() throws FileNotFoundException{
+		/* Retrieve the SWI_LIB environment variable */
+		swiplEnvVar = System.getenv("SWI_LIB");
+		
+		/* If it does not exist an exception is thrown */
+		if(swiplEnvVar == null){
+			throw new EnvironmentVariableNotDefinedException("SWI_LIB environment variable not defined");
+		}		
+		
+		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
+		try{
+			addLibraryPath(swiplEnvVar);
+		} catch(Exception e){
+			throw new JavaLibraryPathException("An error occured during the user path retrieval information process", e);
+		}
+		
 		JPL.setTraditional();
 		JPL.init();
 		
@@ -111,5 +150,34 @@ public class JPLInitializer {
 			throw new PrologPredicateFailedException(functor + args + " predicate failed");
 		}
 		return query;
+	}
+	
+	/**
+	 * Add the specified path to the java library path
+	 *
+	 * @param pathToAdd is the path to add
+	 * @throws SecurityException 
+	 * @throws NoSuchFieldException 
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
+	*/
+	public static void addLibraryPath(String pathToAdd) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
+	    final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
+	    usrPathsField.setAccessible(true);
+
+	    //get array of paths
+	    final String[] paths = (String[])usrPathsField.get(null);
+
+	    //check if the path to add is already present
+	    for(String path : paths) {
+	        if(path.equals(pathToAdd)) {
+	            return;
+	        }
+	    }
+
+	    //add the new path
+	    final String[] newPaths = Arrays.copyOf(paths, paths.length + 1);
+	    newPaths[newPaths.length-1] = pathToAdd;
+	    usrPathsField.set(null, newPaths);
 	}
 }

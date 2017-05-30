@@ -1,26 +1,22 @@
 package it.unige.dibris.TExpRVMAS.core;
 
 import java.io.FileNotFoundException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import org.jpl7.PrologException;
 
-import it.unige.dibris.TExpRVMAS.Exception.EnvironmentVariableNotDefinedException;
-import it.unige.dibris.TExpRVMAS.Exception.JADEAgentInitializationException;
-import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
-import it.unige.dibris.TExpRVMAS.Exception.JavaLibraryPathException;
-import it.unige.dibris.TExpRVMAS.Exception.NoMonitoringSafePartitionFoundException;
-import it.unige.dibris.TExpRVMAS.Exception.PrologPredicateFailedException;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.ConditionsFactory;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
+import it.unige.dibris.TExpRVMAS.exception.EnvironmentVariableNotDefinedException;
+import it.unige.dibris.TExpRVMAS.exception.JADEAgentInitializationException;
+import it.unige.dibris.TExpRVMAS.exception.JADEContainerInitializationException;
+import it.unige.dibris.TExpRVMAS.exception.JavaLibraryPathException;
+import it.unige.dibris.TExpRVMAS.exception.NoMinimalMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.exception.NoMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
@@ -37,11 +33,7 @@ import jade.wrapper.StaleProxyException;
  */
 
 public class Boot {
-
-	/**
-	 *  Path to the SWI-Prolog library folder (it is read from the environment variable SWI_LIB) 
-	 */
-	private String swipl;
+	
 	/** 
 	 * Trace expression used by the main to guide the runtime verification process 
 	 */
@@ -65,10 +57,11 @@ public class Boot {
 	 * trace expression file containing the protocol to verify, and a list of JADE agents to execute/monitor 
 	 * <path_to_trace_expression_file> <jade-agent1> ... <jade-agentN>
 	 * @throws FileNotFoundException if the trace expression file is not found
-	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be found to decentralize the RV process
+	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
+	 * @throws NoMinimalMonitoringSafePartitionFoundException if no minimal monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
 	 */
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws FileNotFoundException, NoMonitoringSafePartitionFoundException {
+	public static void main(String[] args) throws FileNotFoundException, NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException {
 		/* Initialize JADE environment */
 		jade.core.Runtime runtime = jade.core.Runtime.instance();
 		Profile profile = new ProfileImpl();
@@ -85,7 +78,10 @@ public class Boot {
 					if(boot.conditions != null){
 						mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(boot.conditions);
 					} else{
-						mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions();
+						mmsPartitions = boot.tExp.getMinimalMonitoringSafePartitions(null);
+					}
+					if(mmsPartitions.size() == 0){
+						throw new NoMinimalMonitoringSafePartitionFoundException();
 					}
 					int random = new Random().nextInt(mmsPartitions.size());
 					
@@ -96,16 +92,15 @@ public class Boot {
 					if(boot.conditions != null){
 						partition = boot.tExp.getRandomMonitoringSafePartition(boot.conditions);
 					} else{
-						partition = boot.tExp.getRandomMonitoringSafePartition();
+						partition = boot.tExp.getRandomMonitoringSafePartition(null);
 					}
 				}
 			} else{
 				partition = boot.partition;
 			}
 			/*Decentralized monitors creation */
-			for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitor(boot.tExp, partition)){
+			for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(boot.tExp, partition)){
 				try{
-					m.setErrorMessageGuiFlag(boot.gui);
 					AgentController ac = container.acceptNewAgent(m.getMonitorName(), m);
 					ac.start();
 				} catch(StaleProxyException e){
@@ -114,8 +109,11 @@ public class Boot {
 			}
 		} else{
 			/* Centralized monitor creation */
-			SnifferMonitorFactory.createAndRunCentralizedMonitor(boot.tExp, container).setErrorMessageGuiFlag(boot.gui);;
+			SnifferMonitorFactory.createAndRunCentralizedMonitor(boot.tExp, container);
 		}
+		
+		/* Set (not) visible the Message Logging GUI */
+		Monitor.setErrorMessageGUIVisible(boot.gui);
 
 		runAgents(container, boot.agents);
 		
@@ -295,21 +293,6 @@ public class Boot {
 			throw new IllegalArgumentException("You have to pass at least the trace expression file and the list of JADE agents");
 		}
 		
-		/* Retrieve the SWI_LIB environment variable */
-		boot.swipl = System.getenv("SWI_LIB");
-		
-		/* If it does not exist an exception is thrown */
-		if(boot.swipl == null){
-			throw new EnvironmentVariableNotDefinedException("SWI_LIB environment variable not defined");
-		}		
-		
-		/* We need to add the SWI-Prolog Home to the path in order to use the JPL library */
-		try{
-			addLibraryPath(boot.swipl);
-		} catch(Exception e){
-			throw new JavaLibraryPathException("An error occured during the user path retrieval information process", e);
-		}
-		
 		/* SWI-Prolog environment initialization (transition system, DecAMon, current trace expression) */
 		JPLInitializer.init();
 		
@@ -435,35 +418,6 @@ public class Boot {
 		} catch(StaleProxyException e){
 			throw new JADEAgentInitializationException("Unable to start an agent container", e);
 		}
-	}
-	
-	/**
-	 * Add the specified path to the java library path
-	 *
-	 * @param pathToAdd is the path to add
-	 * @throws SecurityException 
-	 * @throws NoSuchFieldException 
-	 * @throws IllegalAccessException 
-	 * @throws IllegalArgumentException 
-	*/
-	private static void addLibraryPath(String pathToAdd) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
-	    final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
-	    usrPathsField.setAccessible(true);
-
-	    //get array of paths
-	    final String[] paths = (String[])usrPathsField.get(null);
-
-	    //check if the path to add is already present
-	    for(String path : paths) {
-	        if(path.equals(pathToAdd)) {
-	            return;
-	        }
-	    }
-
-	    //add the new path
-	    final String[] newPaths = Arrays.copyOf(paths, paths.length + 1);
-	    newPaths[newPaths.length-1] = pathToAdd;
-	    usrPathsField.set(null, newPaths);
 	}
 
 }

@@ -15,10 +15,16 @@ public abstract class Monitor extends ToolAgent {
 	 * The monitor name
 	 */
 	private String name;
-	/**
-	 * GUI flag
-	 */
-	private boolean errorMessageGUI;
+	
+	private static ErrorMessageGUI errorMsgGUI = new ErrorMessageGUI();
+	
+	public static void setErrorMessageGUIVisible(boolean visible){
+		errorMsgGUI.setVisible(visible);
+	}
+	
+	public static boolean isErrorMessageGUIVisible(){
+		return errorMsgGUI.isVisible();
+	}
 	
 	/**
 	 * Constructor
@@ -36,20 +42,8 @@ public abstract class Monitor extends ToolAgent {
 		return name;
 	}
 	
-	/**
-	 * Setter method to enable the message GUI for the errors thrown by the monitor 
-	 * @param gui true to enable the GUI, false otherwise 
-	 */
-	public void setErrorMessageGuiFlag(boolean gui){
-		this.errorMessageGUI = gui;
-	}
-
-	/**
-	 * Getter method for the GUI flag
-	 * @return the errorMessageGUI
-	 */
-	public boolean isErrorMessageGUI() {
-		return errorMessageGUI;
+	public void sendMessageLogToGUI(String msg){
+		errorMsgGUI.addMessageLog(this, msg);
 	}
 	
 }

@@ -32,6 +32,5 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/angeloferrando/Documents/workspace/distributionInJADE/configurations/alt_bit_4/alt_bit.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

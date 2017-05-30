@@ -12,10 +12,11 @@ import org.jpl7.Compound;
 import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
-import it.unige.dibris.TExpRVMAS.Exception.NoMonitoringSafePartitionFoundException;
-import it.unige.dibris.TExpRVMAS.Exception.TraceExpressionNotContractiveException;
+
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
+import it.unige.dibris.TExpRVMAS.exception.NoMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNotContractiveException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
 /**
@@ -75,7 +76,7 @@ public class TraceExpression {
 	 * @throws NullPointerException if conditions is null
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public List<Partition<String>> getMinimalMonitoringSafePartitions(Condition<String>... conditions){
 		if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
@@ -100,7 +101,7 @@ public class TraceExpression {
 		}
 		query.close();
 		return mmsPartitions;
-	}
+	}*/
 	
 	/**
 	 * Get the set of Minimal Monitoring Safe partitions (MMS)
@@ -111,9 +112,9 @@ public class TraceExpression {
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
 	public List<Partition<String>> getMinimalMonitoringSafePartitions(List<Condition<String>> conditions){
-		if(conditions == null){
+		/*if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
-		}
+		}*/
 		List<Partition<String>> mmsPartitions = new ArrayList<>();
 		Query query = JPLInitializer.createAndCheck("decAMonJADE(MMsPartitions)");
 		Compound mmsPartitionsTerm = (Compound) query.oneSolution().get("MMsPartitions");
@@ -171,7 +172,7 @@ public class TraceExpression {
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 * @throws NullPointerException if conditions is null
 	 */
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public Partition<String> getRandomMonitoringSafePartition(Condition<String>... conditions) throws NoMonitoringSafePartitionFoundException{
 		if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
@@ -190,7 +191,7 @@ public class TraceExpression {
 		} else{
 			throw new NoMonitoringSafePartitionFoundException();
 		}
-	}
+	}*/
 	
 	/**
 	 * Get a random Monitoring Safe partition
@@ -198,12 +199,11 @@ public class TraceExpression {
 	 * @return the monitoring safe partition selected randomly
 	 * 
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
-	 * @throws NullPointerException if conditions is null
 	 */
 	public Partition<String> getRandomMonitoringSafePartition(List<Condition<String>> conditions) throws NoMonitoringSafePartitionFoundException{
-		if(conditions == null){
+		/*if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
-		}
+		}*/
 		int random = new Random().nextInt();
 		List<Partition<String>> msPartitions = new ArrayList<>();
 		int count = 0;
@@ -228,7 +228,7 @@ public class TraceExpression {
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 * @throws NullPointerException if conditions is null
 	 */
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public Partition<String> getFirstMonitoringSafePartition(Condition<String>... conditions) throws NoMonitoringSafePartitionFoundException{
 		if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
@@ -239,7 +239,7 @@ public class TraceExpression {
 		} else{
 			throw new NoMonitoringSafePartitionFoundException();
 		}
-	}
+	}*/
 	
 	/**
 	 * Get the first Monitoring Safe partition generated
@@ -247,12 +247,11 @@ public class TraceExpression {
 	 * @return the monitoring safe partition selected
 	 * 
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
-	 * @throws NullPointerException if conditions is null
 	 */
 	public Partition<String> getFirstMonitoringSafePartition(List<Condition<String>> conditions) throws NoMonitoringSafePartitionFoundException{
-		if(conditions == null){
+		/*if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
-		}
+		}*/
 		Iterator<Partition<String>> itPartitions = getMonitoringSafePartitions(conditions).iterator();
 		if(itPartitions.hasNext()){
 			return itPartitions.next();
@@ -268,7 +267,7 @@ public class TraceExpression {
 	 * 
 	 * @throws NullPointerException if conditions is null
 	 */
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public Iterable<Partition<String>> getMonitoringSafePartitions(Condition<String>... conditions){
 		if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
@@ -352,19 +351,18 @@ public class TraceExpression {
 				};
 			}
 		};
-	}
+	}*/
 	
 	/**
 	 * Get the set of Monitoring Safe partitions (MS)
 	 * @param conditions that must be satisfied by the partitions returned
 	 * @return the set of Monitoring Safe partitions satisfying the conditions
 	 * 
-	 * @throws NullPointerException if conditions is null
 	 */
 	public Iterable<Partition<String>> getMonitoringSafePartitions(List<Condition<String>> conditions){
-		if(conditions == null){
+		/*if(conditions == null){
 			throw new NullPointerException("conditions must not be null");
-		}
+		}*/
 		Query query = new Query("decOne(MSPartition)");
 		return new Iterable<Partition<String>>() {
 			

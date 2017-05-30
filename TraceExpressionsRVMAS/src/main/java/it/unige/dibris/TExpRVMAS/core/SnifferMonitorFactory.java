@@ -7,15 +7,16 @@ import java.util.Set;
 import org.jpl7.PrologException;
 import org.jpl7.Query;
 import org.jpl7.Term;
-import it.unige.dibris.TExpRVMAS.Exception.DecentralizedPartitionNotFoundException;
-import it.unige.dibris.TExpRVMAS.Exception.JADEContainerInitializationException;
-import it.unige.dibris.TExpRVMAS.Exception.NoMinimalMonitoringSafePartitionFoundException;
-import it.unige.dibris.TExpRVMAS.Exception.NotMonitoringSafePartitionException;
+
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.PartitionType;
 import it.unige.dibris.TExpRVMAS.core.monitor.Sniffer;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
+import it.unige.dibris.TExpRVMAS.exception.DecentralizedPartitionNotFoundException;
+import it.unige.dibris.TExpRVMAS.exception.JADEContainerInitializationException;
+import it.unige.dibris.TExpRVMAS.exception.NoMinimalMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.exception.NotMonitoringSafePartitionException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
@@ -113,12 +114,11 @@ public class SnifferMonitorFactory {
 	 * 
 	 * @throws DecentralizedPartitionNotFoundException if no partition can be found to decentralize to generate the monitors (only a centralized monitor can be used)
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if <code>tExp</code> or <code>pType</code> or <code>conditions</code> are null
+	 * @throws NullPointerException if <code>tExp</code> or <code>pType</code> are null
 	 */
-	@SuppressWarnings("unchecked")
-	public static List<Monitor> createDecentralizedMonitor(TraceExpression tExp, PartitionType pType, Condition<String>... conditions) throws DecentralizedPartitionNotFoundException{
-		if(tExp == null || pType == null || conditions == null){
-			throw new NullPointerException("tExp and pType and conditions must not be null");
+	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, PartitionType pType, List<Condition<String>> conditions) throws DecentralizedPartitionNotFoundException{
+		if(tExp == null || pType == null){
+			throw new NullPointerException("tExp and pType must not be null");
 		}
 		tExp.load();
 		if(pType == PartitionType.MinimalMonitoringSafe){
@@ -149,7 +149,7 @@ public class SnifferMonitorFactory {
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws NullPointerException if <code>tExp</code> or <code>partition</code> are null
 	 */
-	public static List<Monitor> createDecentralizedMonitor(TraceExpression tExp, Partition<String> partition) {
+	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, Partition<String> partition) {
 		if(tExp == null || partition == null){
 			throw new NullPointerException("tExp and partition must not be null");
 		}
