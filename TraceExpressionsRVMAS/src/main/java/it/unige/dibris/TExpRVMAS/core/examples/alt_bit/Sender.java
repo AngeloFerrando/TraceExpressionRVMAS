@@ -1,5 +1,7 @@
 package it.unige.dibris.TExpRVMAS.core.examples.alt_bit;
 
+import it.unige.dibris.TExpRVMAS.core.Monitor;
+import it.unige.dibris.TExpRVMAS.core.PerceptionFactory;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -30,6 +32,9 @@ public class Sender extends Agent{
 		        
 		        System.out.println("[" + getLocalName() + "]: send " + content + " to " + receiver);
 		        send(msg);
+		        
+		        //Monitor m = Monitor.getMyMonitor(getName());
+		        //m.addPerception(PerceptionFactory.createSimpleAction(Sender.this, "action1"));
 				
 		        ACLMessage msgR= blockingReceive();
 		        if(msgR != null)

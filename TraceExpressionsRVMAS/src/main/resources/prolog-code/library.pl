@@ -353,10 +353,15 @@ project(ProtocolName, NewAssoc,IncDepth,DeepestSeq,Type1,ProjectedAgents,Project
 /****************************************************************************/
 
 involves(ProtocolName, IntType, List) :-
-match(ProtocolName, Message, IntType),
-Message =.. [msg, performative(_P), sender(Sender), receiver(Receiver) | _T],
-(member(Sender, List);
-member(Receiver, List)).
+  match(ProtocolName, Message, IntType),
+  Message =.. [msg, performative(_P), sender(Sender), receiver(Receiver) | _T],
+  (member(Sender, List);
+  member(Receiver, List)).
+
+involves(ProtocolName, IntType, List) :-
+  match(ProtocolName, Action, IntType),
+  Action =.. [act, agent(A), content(_C) | _T],
+  member(A, List).
 
 
 /****************************************************************************/

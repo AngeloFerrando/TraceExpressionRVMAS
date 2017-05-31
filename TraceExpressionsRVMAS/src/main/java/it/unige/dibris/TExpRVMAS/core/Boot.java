@@ -57,8 +57,9 @@ public class Boot {
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
 	 * @throws NoMinimalMonitoringSafePartitionFoundException if no minimal monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
 	 * @throws IOException if the trace expression file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
+	 * @throws StaleProxyException if an error occurred communicating with JADE
 	 */
-	public static void main(String[] args) throws NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException, IOException {
+	public static void main(String[] args) throws NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException, IOException, StaleProxyException {
 		/* Initialize JADE environment */
 		jade.core.Runtime runtime = jade.core.Runtime.instance();
 		Profile profile = new ProfileImpl();
@@ -95,8 +96,9 @@ public class Boot {
 			} else{
 				partition = boot.partition;
 			}
+			
 			/*Decentralized monitors creation */
-			for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(boot.tExp, partition)){
+			for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(boot.tExp, partition, boot.agents)){
 				try{
 					AgentController ac = container.acceptNewAgent(m.getMonitorName(), m);
 					ac.start();
@@ -106,7 +108,7 @@ public class Boot {
 			}
 		} else{
 			/* Centralized monitor creation */
-			SnifferMonitorFactory.createAndRunCentralizedMonitor(boot.tExp, container);
+			SnifferMonitorFactory.createAndRunCentralizedMonitor(boot.tExp, container, boot.agents);
 		}
 		
 		/* Set (not) visible the Message Logging GUI */

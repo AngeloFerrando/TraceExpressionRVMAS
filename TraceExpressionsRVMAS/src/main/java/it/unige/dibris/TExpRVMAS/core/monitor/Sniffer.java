@@ -47,6 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jpl7.Query;
 
 import it.unige.dibris.TExpRVMAS.core.Monitor;
+import it.unige.dibris.TExpRVMAS.core.Perception;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import jade.content.AgentAction;
 import jade.content.onto.basic.Action;
@@ -85,12 +86,13 @@ import jade.util.Logger;
 import jade.util.leap.ArrayList;
 import jade.util.leap.Iterator;
 import jade.util.leap.List;
+import jade.wrapper.AgentController;
 
 /* public class Sniffer */
 public class Sniffer extends Monitor {
 	
-	public Sniffer(String name, TraceExpression tExp) {
-		super(name, tExp);
+	public Sniffer(String name, TraceExpression tExp, java.util.List<AgentController> agents) {
+		super(name, tExp, agents);
 	}
 
 		FileWriter fstream;
@@ -308,6 +310,7 @@ public class Sniffer extends Monitor {
 	 */
 	private String myContainerName;
 	private String monitorID;
+	private String perception;
 
 	class SnifferAMSListenerBehaviour extends AMSListenerBehaviour {
 
@@ -513,13 +516,23 @@ public class Sniffer extends Monitor {
 						monitorID + ","
 						+ (System.currentTimeMillis() - local_epoch) + ")");
 				boolean verify = q.hasSolution();
-				if(isErrorMessageGUIVisible() && prolog_msg != null){
-					if(verify){
-						sendMessageLogToGUI("(" + prolog_msg + ") message has been perceived [CONSISTENT]");
-					} else{
-						sendMessageLogToGUI("ERROR: (" + prolog_msg + ") message has been perceived [INCONSISTENT]");
+				if(isErrorMessageGUIVisible()){
+					if(prolog_msg != null){
+						if(verify){
+							sendMessageLogToGUI("(" + prolog_msg + ") message has been perceived [CONSISTENT]");
+						} else{
+							sendMessageLogToGUI("ERROR: (" + prolog_msg + ") message has been perceived [INCONSISTENT]");
+						}
+						prolog_msg = null;
 					}
-					prolog_msg = null;
+					if(perception != null){
+						if(verify){
+							sendMessageLogToGUI("(" + perception + ") perception has been perceived [CONSISTENT]");
+						} else{
+							sendMessageLogToGUI("ERROR: (" + perception + ") perception has been perceived [INCONSISTENT]");
+						}
+						perception = null;
+					}
 				}
 			}
 		});
@@ -867,5 +880,13 @@ public class Sniffer extends Monitor {
 			return result;
 		}
 	} // END of inner class RequestListenerBehaviour
+
+	@Override
+	public void addPerception(Perception perception) {
+		this.perception = perception.toPrologRepresentation();
+		String t1 = "remember(" + monitorID + "," + this.perception + ")";
+		Query q1 = new Query(t1);
+		q1.hasSolution();
+	}
 
 } /* END of public class Sniffer */

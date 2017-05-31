@@ -4,9 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+
 import org.jpl7.PrologException;
-import org.jpl7.Query;
-import org.jpl7.Term;
 
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
@@ -17,7 +16,6 @@ import it.unige.dibris.TExpRVMAS.exception.DecentralizedPartitionNotFoundExcepti
 import it.unige.dibris.TExpRVMAS.exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.exception.NoMinimalMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.exception.NotMonitoringSafePartitionException;
-import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
@@ -34,16 +32,17 @@ public class SnifferMonitorFactory {
 	 * Create a centralized monitor guided by a trace expression
 	 * @param tExp is the trace expression used to generate the centralized monitor
 	 * @return the centralized monitor (ready to be executed by the user)
+	 * @throws StaleProxyException 
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if <code>tExp</code> is null
+	 * @throws NullPointerException if arguments are null
 	 */
-	public static Monitor createCentralizedMonitor(TraceExpression tExp){
-		if(tExp == null){
-			throw new NullPointerException("tExp must not be null");
+	public static Monitor createCentralizedMonitor(TraceExpression tExp, List<AgentController> agents) throws StaleProxyException{
+		if(tExp == null || agents == null){
+			throw new NullPointerException("tExp and agents must not be null");
 		}
-		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp);
-		Query query = new Query("involved(InvolvedAgents)");
+		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp, agents);
+		/*Query query = new Query("involved(InvolvedAgents)");
 		String agents;
 		if(!query.hasSolution()){
 			agents = "[]";
@@ -55,10 +54,15 @@ public class SnifferMonitorFactory {
 				agents += agent + ",";
 			}
 			agents = agents.substring(0, agents.length() - 1) + "]";
+		}*/
+		String agentsStr = "[";
+		for(AgentController agent : agents){
+			agentsStr += agent.getName() + ",";
 		}
+		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
 		s.setArguments(new String[]{
 				"sniffer_centralized" + ".txt",
-				agents
+				agentsStr
 		});
 		return s;
 	}
@@ -68,16 +72,17 @@ public class SnifferMonitorFactory {
 	 * @param tExp is the trace expression used to generate the centralized monitor
 	 * @param container where to execute the monitor
 	 * @return the centralized monitor (ready to be executed by the user)
+	 * @throws StaleProxyException 
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if <code>tExp</code> or <code>container</code> are null
+	 * @throws NullPointerException if arguments are null
 	 */
-	public static Monitor createAndRunCentralizedMonitor(TraceExpression tExp, AgentContainer container){
-		if(tExp == null || container == null){
-			throw new NullPointerException("tExp and container must not be null");
+	public static Monitor createAndRunCentralizedMonitor(TraceExpression tExp, AgentContainer container, List<AgentController> agents) throws StaleProxyException{
+		if(tExp == null || container == null || agents == null){
+			throw new NullPointerException("tExp, container and agents must not be null");
 		}
-		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp);
-		Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
+		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp, agents);
+		/*Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
 		String agents;
 		if(!query.hasSolution()){
 			agents = "[]";
@@ -89,10 +94,15 @@ public class SnifferMonitorFactory {
 				agents += agent + ",";
 			}
 			agents = agents.substring(0, agents.length() - 1) + "]";
+		}*/
+		String agentsStr = "[";
+		for(AgentController agent : agents){
+			agentsStr += agent.getName() + ",";
 		}
+		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
 		s.setArguments(new String[]{
 				"sniffer_centralized" + ".txt",
-				agents
+				agentsStr
 		});
 		try{
 			AgentController ac = container.acceptNewAgent("sniffer_monitor", s);
@@ -112,11 +122,11 @@ public class SnifferMonitorFactory {
 	 * 
 	 * @throws DecentralizedPartitionNotFoundException if no partition can be found to decentralize to generate the monitors (only a centralized monitor can be used)
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if <code>tExp</code> or <code>pType</code> are null
+	 * @throws NullPointerException if arguments are null
 	 */
-	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, PartitionType pType, List<Condition<String>> conditions) throws DecentralizedPartitionNotFoundException{
-		if(tExp == null || pType == null){
-			throw new NullPointerException("tExp and pType must not be null");
+	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, PartitionType pType, List<Condition<String>> conditions, List<AgentController> agents) throws DecentralizedPartitionNotFoundException{
+		if(tExp == null || pType == null || agents == null){
+			throw new NullPointerException("tExp, pType and agents must not be null");
 		}
 		if(pType == PartitionType.MinimalMonitoringSafe){
 			List<Partition<String>> mmsPartitions = tExp.getMinimalMonitoringSafePartitions(conditions);
@@ -126,14 +136,14 @@ public class SnifferMonitorFactory {
 			} else if(mmsPartitions.size() == 1 && mmsPartitions.get(0).getNumberConstraints() == 1){
 				throw new DecentralizedPartitionNotFoundException();
 			} else{
-				return createMonitors(mmsPartitions.get(random), tExp);
+				return createMonitors(mmsPartitions.get(random), tExp, agents);
 			}
 		} else{
 			Partition<String> msPartition = tExp.getRandomMonitoringSafePartition(conditions);
 			if(msPartition.getNumberConstraints() == 1){
 				throw new DecentralizedPartitionNotFoundException();
 			}	
-			return createMonitors(msPartition, tExp);
+			return createMonitors(msPartition, tExp, agents);
 		}
 	}
 	
@@ -144,16 +154,16 @@ public class SnifferMonitorFactory {
 	 * @return the set of monitors generated using the partition (ready to be executed by the user) 
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
-	 * @throws NullPointerException if <code>tExp</code> or <code>partition</code> are null
+	 * @throws NullPointerException if arguments are null
 	 */
-	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, Partition<String> partition) {
-		if(tExp == null || partition == null){
-			throw new NullPointerException("tExp and partition must not be null");
+	public static List<Monitor> createDecentralizedMonitors(TraceExpression tExp, Partition<String> partition, List<AgentController> agents) {
+		if(tExp == null || partition == null || agents == null){
+			throw new NullPointerException("tExp, partition and agents must not be null");
 		}
 		if(!tExp.isMonitoringSafe(partition)){
 			throw new NotMonitoringSafePartitionException();
 		}
-		return createMonitors(partition, tExp);
+		return createMonitors(partition, tExp, agents);
 	}
 	
 	/**
@@ -162,17 +172,17 @@ public class SnifferMonitorFactory {
 	 * @param tExp the Trace Expression to use to generate the monitors
 	 * @return the set of monitors generated
 	 * 
-	 * @throws NullPointerException if <code>partition</code> or <code>tExp</code> are null
+	 * @throws NullPointerException if arguments are null
 	 */
-	private static List<Monitor> createMonitors(Partition<String> partition, TraceExpression tExp){
-		if(partition == null || tExp == null){
-			throw new NullPointerException("partition and tExp must not be null");
+	private static List<Monitor> createMonitors(Partition<String> partition, TraceExpression tExp, List<AgentController> agents){
+		if(partition == null || tExp == null || agents == null){
+			throw new NullPointerException("partition, tExp and agents must not be null");
 		}
 		List<Monitor> monitors = new ArrayList<>();
 		for(Set<String> constraint : partition){
 			/* Sniffer creation */
 			String constraintAux = constraint.toString().replace("[", "").replace("]", "").replace(",", "_").replace(" ", "");
-			Sniffer s = new Sniffer("sniffer_monitor_decentralized_on_" + constraintAux, tExp);
+			Sniffer s = new Sniffer("sniffer_monitor_decentralized_on_" + constraintAux, tExp, agents);
 			s.setArguments(new String[]{
 					"sniffer_monitor_decentralized_on_" + constraintAux + ".txt",
 					constraint.toString()
