@@ -105,7 +105,7 @@ public class TraceExpression {
 		if(!isContractive()){
 			throw new TraceExpressionNotContractiveException();
 		}
-		if(!(areEventsAtomic() ^ areEventsAsync())){
+		if(!(areEventsAtomic() || areEventsAsync())){
 			throw new TraceExpressionNeitherAtomicNorAsyncEventTypesException();
 		}
 	}

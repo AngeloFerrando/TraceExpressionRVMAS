@@ -347,7 +347,7 @@ are_all_events_atomic(ET:T, Assoc) :-
   not(last(L, "r")),
   are_all_events_atomic(T, Assoc1).
 are_all_events_atomic(T, Assoc) :-
-  (T = (T1\/T2); T = (T1|T2); T = (T1*T2)), !, trace,
+  (T = (T1\/T2); T = (T1|T2); T = (T1*T2); T = (T1/\T2)), !,
   put_assoc(T, Assoc, _, Assoc1),
   are_all_events_atomic(T1, Assoc1),
   are_all_events_atomic(T2, Assoc1).
@@ -377,7 +377,7 @@ are_all_events_async(ET:T, Assoc) :-
   (last(L, "s");last(L, "r")),
   are_all_events_async(T, Assoc1).
 are_all_events_async(T, Assoc) :-
-  (T = (T1\/T2); T = (T1|T2); T = (T1*T2)), !,
+  (T = (T1\/T2); T = (T1|T2); T = (T1*T2); T = (T1/\T2)), !,
   put_assoc(T, Assoc, _, Assoc1),
   are_all_events_async(T1, Assoc1),
   are_all_events_async(T2, Assoc1).
