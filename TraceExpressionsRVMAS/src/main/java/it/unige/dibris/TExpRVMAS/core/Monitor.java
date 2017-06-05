@@ -1,5 +1,6 @@
 package it.unige.dibris.TExpRVMAS.core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,7 +66,7 @@ public abstract class Monitor extends ToolAgent {
 		}
 		this.name = name;
 		this.tExp = tExp;
-		this.agents = agents;
+		this.agents = new ArrayList<>(agents);
 		for(AgentController agent : agents){
 			try {
 				Monitor.mapToMonitor.putIfAbsent(agent.getName(), this);

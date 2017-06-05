@@ -241,7 +241,6 @@ accept(N,T1,[E|L],T3) :-
   M is N - 1,
   accept(M,T2,L,T3).
 
-
 is_contractive(ProtocolName) :-
   trace_expression(ProtocolName, T),
   is_contractive(T).
@@ -280,6 +279,116 @@ is_contractive(ET>>T, Depth, DeepestSeq, Assoc) :-
   put_assoc(ET>>T, Assoc, Depth, Assoc1),
   IncDepth is Depth + 1,
   is_contractive(T, IncDepth, DeepestSeq, Assoc1).
+
+filter_events(T, TFiltered, Threshold, ProtocolName) :-
+  empty_assoc(A),
+  filter_events(T, TFiltered, A, Threshold, ProtocolName).
+
+filter_events(epsilon, epsilon, _, _, _) :- !.
+filter_events(T, TFiltered, Assoc, _, _) :-
+  get_assoc(T, Assoc, TFiltered), !.
+filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
+  match(ProtocolName, E, ET), reliable(ProtocolName, E, 0), !,
+  put_assoc(ET:T, Assoc, TFiltered, Assoc1),
+  filter_events(T, TFiltered, Assoc1, Threshold, ProtocolName).
+filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
+  match(ProtocolName, E, ET), reliable(ProtocolName, E, 1), !,
+  put_assoc(ET:T, Assoc, TFiltered, Assoc1),
+  filter_events(T, T1, Assoc1, Threshold, ProtocolName),
+  TFiltered = ET:T1.
+filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
+  match(ProtocolName, E, ET), reliable(ProtocolName, E, Perc),
+  put_assoc(ET:T, Assoc, TFiltered, Assoc1),
+  filter_events(T, T1, Assoc1, Threshold, ProtocolName),
+  ((Perc =< Threshold) ->
+    (TFiltered = ((ET:epsilon) \/ epsilon) * T1);
+    (TFiltered = ET:T1)).
+filter_events(T1\/T2, TFiltered, Assoc, Threshold, ProtocolName) :-
+  put_assoc(T1\/T2, Assoc, TFiltered, Assoc1),
+  filter_events(T1, TFiltered1, Assoc1, Threshold, ProtocolName),
+  filter_events(T2, TFiltered2, Assoc1, Threshold, ProtocolName),
+  TFiltered = TFiltered1 \/ TFiltered2.
+filter_events(T1|T2, TFiltered, Assoc, Threshold, ProtocolName) :-
+  put_assoc(T1|T2, Assoc, TFiltered, Assoc1),
+  filter_events(T1, TFiltered1, Assoc1, Threshold, ProtocolName),
+  filter_events(T2, TFiltered2, Assoc1, Threshold, ProtocolName),
+  fork(TFiltered1, TFiltered2, TFiltered).
+filter_events(T1*T2, TFiltered, Assoc, Threshold, ProtocolName) :-
+  put_assoc(T1*T2, Assoc, TFiltered, Assoc1),
+  filter_events(T1, TFiltered1, Assoc1, Threshold, ProtocolName),
+  filter_events(T2, TFiltered2, Assoc1, Threshold, ProtocolName),
+  concat(TFiltered1, TFiltered2, TFiltered).
+filter_events(T1/\T2, TFiltered, Assoc, Threshold, ProtocolName) :-
+  put_assoc(T1/\T2, Assoc, TFiltered, Assoc1),
+  filter_events(T1, TFiltered1, Assoc1, Threshold, ProtocolName),
+  filter_events(T2, TFiltered2, Assoc1, Threshold, ProtocolName),
+  conj(TFiltered1, TFiltered2, TFiltered).
+filter_events(ET>>T, TFiltered, Assoc, Threshold, ProtocolName) :-
+  put_assoc(ET>>T, Assoc, TFiltered, Assoc1),
+  filter_events(T, T1, Assoc1, Threshold, ProtocolName),
+  TFiltered = (ET>>T1).
+
+are_all_events_atomic_aux(ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  are_all_events_atomic(T).
+
+are_all_events_atomic(T) :-
+  empty_assoc(A),
+  are_all_events_atomic(T, A), !.
+
+are_all_events_atomic(epsilon, _).
+are_all_events_atomic(T, Assoc) :-
+  get_assoc(T, Assoc, _), !.
+are_all_events_atomic(ET:T, Assoc) :-
+  put_assoc(ET:T, Assoc, _, Assoc1),
+  term_string(ET, S),
+  split_string(S, "_", "", L),
+  not(last(L, "s")),
+  not(last(L, "r")),
+  are_all_events_atomic(T, Assoc1).
+are_all_events_atomic(T, Assoc) :-
+  (T = (T1\/T2); T = (T1|T2); T = (T1*T2)), !, trace,
+  put_assoc(T, Assoc, _, Assoc1),
+  are_all_events_atomic(T1, Assoc1),
+  are_all_events_atomic(T2, Assoc1).
+are_all_events_atomic(ET>>T, Assoc) :-
+  put_assoc(ET>>T, Assoc, _, Assoc1),
+  term_string(ET, S),
+  split_string(S, "_", "", L),
+  not(last(L, "s")),
+  not(last(L, "r")),
+  are_all_events_atomic(T, Assoc1).
+
+are_all_events_async_aux(ProtocolName) :-
+  trace_expression(ProtocolName, T),
+  are_all_events_async(T).
+
+are_all_events_async(T) :-
+  empty_assoc(A),
+  are_all_events_async(T, A), !.
+
+are_all_events_async(epsilon, _).
+are_all_events_async(T, Assoc) :-
+  get_assoc(T, Assoc, _), !.
+are_all_events_async(ET:T, Assoc) :-
+  put_assoc(ET:T, Assoc, _, Assoc1),
+  term_string(ET, S),
+  split_string(S, "_", "", L),
+  (last(L, "s");last(L, "r")),
+  are_all_events_async(T, Assoc1).
+are_all_events_async(T, Assoc) :-
+  (T = (T1\/T2); T = (T1|T2); T = (T1*T2)), !,
+  put_assoc(T, Assoc, _, Assoc1),
+  are_all_events_async(T1, Assoc1),
+  are_all_events_async(T2, Assoc1).
+are_all_events_async(ET>>T, Assoc) :-
+  put_assoc(ET>>T, Assoc, _, Assoc1),
+  term_string(ET, S),
+  split_string(S, "_", "", L),
+  (last(L, "s");last(L, "r")),
+  are_all_events_async(T, Assoc1).
+
+
 
 /* ************************************************************************** */
 /* 							DYNAMIC PROJECTION				 			      */

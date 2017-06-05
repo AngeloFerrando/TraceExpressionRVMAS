@@ -6,6 +6,8 @@ import java.util.List;
 
 import it.unige.dibris.TExpRVMAS.core.Monitor;
 import it.unige.dibris.TExpRVMAS.core.SnifferMonitorFactory;
+import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
+import it.unige.dibris.TExpRVMAS.core.decentralized.ConditionsFactory;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import it.unige.dibris.TExpRVMAS.exception.DecentralizedPartitionNotFoundException;
@@ -60,6 +62,8 @@ public class AltBitMain {
 		agents.add(davidC);
 		
 		/* Decentralized monitors (first MS partition) */
+		
+		//ConditionsFactory.createMustBeSplitCondition("alice", "bob");		
 		Partition<String> partition = tExp.getFirstMonitoringSafePartition(null);
 		for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(tExp, partition, agents)){
 			container.acceptNewAgent(m.getMonitorName(), m).start();

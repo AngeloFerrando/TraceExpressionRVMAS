@@ -17,6 +17,7 @@ import it.unige.dibris.TExpRVMAS.exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.exception.JavaLibraryPathException;
 import it.unige.dibris.TExpRVMAS.exception.NoMinimalMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.exception.NoMonitoringSafePartitionFoundException;
+import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNotContractiveException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.core.Profile;
 import jade.core.ProfileImpl;
@@ -58,6 +59,7 @@ public class Boot {
 	 * @throws NoMinimalMonitoringSafePartitionFoundException if no minimal monitoring safe partition can be found to decentralize the RV process (consistently with the conditions)
 	 * @throws IOException if the trace expression file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 * @throws StaleProxyException if an error occurred communicating with JADE
+	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
 	 */
 	public static void main(String[] args) throws NoMonitoringSafePartitionFoundException, NoMinimalMonitoringSafePartitionFoundException, IOException, StaleProxyException {
 		/* Initialize JADE environment */
@@ -124,6 +126,7 @@ public class Boot {
 	 * Parse the arguments passed to the Boot main method
 	 * @param args are the arguments passed to the Boot class main that we want to parse
 	 * @return a new Boot object generated starting from the passed arguments
+	 * 
 	 * @throws IOException if the trace expression file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 * @throws NullPointerException if <code>args</code> is null
 	 * @throws IllegalArgumentException if arguments do not follow these structure:
@@ -139,6 +142,7 @@ public class Boot {
 	 * @throws EnvironmentVariableNotDefinedException if SWI_LIB environment variable is not defined
 	 * @throws JavaLibraryPathException if an error occurred adding the SWI_LIB folder to the java library path
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
+	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
 	 */
 	private static Boot parseArguments(String[] args, AgentContainer container) throws IOException{
 		if(args == null){

@@ -481,11 +481,41 @@ public class TraceExpression {
 		};
 	}
 
-	/**s
+	/**
 	 * @return the protocolName
 	 */
 	public String getProtocolName() {
 		return protocolName;
+	}
+
+	/**
+	 * Get the information about the events atomicity 
+	 * (The events must be either all atomic or all async)
+	 * @return true if all events are atomic, false otherwise
+	 */
+	public boolean areEventsAtomic() {
+		Query query1 = new Query("are_all_events_atomic_aux(" + protocolName + ")");
+		boolean res1 = query1.hasSolution();
+		Query query2 = new Query("are_all_events_async_aux(" + protocolName + ")");
+		boolean res2 = query2.hasSolution();
+		query1.close();
+		query2.close();
+		return res1 && !res2;
+	}
+	
+	/**
+	 * Get the information about the events concurrency 
+	 * (The events must be either all atomic or all async)
+	 * @return true if all events are async, false otherwise
+	 */
+	public boolean areEventsAsync() {
+		Query query1 = new Query("are_all_events_atomic_aux(" + protocolName + ")");
+		boolean res1 = query1.hasSolution();
+		Query query2 = new Query("are_all_events_async_aux(" + protocolName + ")");
+		boolean res2 = query2.hasSolution();
+		query1.close();
+		query2.close();
+		return !res1 && res2;
 	}
 	
 }

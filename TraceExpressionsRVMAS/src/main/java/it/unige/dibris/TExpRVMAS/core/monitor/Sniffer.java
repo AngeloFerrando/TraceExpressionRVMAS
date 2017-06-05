@@ -180,11 +180,14 @@ public class Sniffer extends Monitor {
 						content = ((PostedMessage)ev).getMessage().getPayload();
 						env = ((PostedMessage)ev).getMessage().getEnvelope();
 						unicastReceiver = ((PostedMessage)ev).getReceiver();
-						AID sender = ((PostedMessage)ev).getSender();
-						// If the sender is currently under sniff, then the message was already
-						// displayed when the 'sent-message' event occurred --> just skip this message.
-						if(agentsUnderSniff.contains(new Agent(sender))) {
-							return;
+						
+						if(getTraceExpression().areEventsAtomic()){
+							AID sender = ((PostedMessage)ev).getSender();
+							// If the sender is currently under sniff, then the message was already
+							// displayed when the 'sent-message' event occurred --> just skip this message.
+							if(agentsUnderSniff.contains(new Agent(sender))) {
+								return;
+							}
 						}
 					} else {
 						return;
@@ -225,7 +228,10 @@ public class Sniffer extends Monitor {
 						myGUI.mainPanel.panelcan.canvMess.recMessage(msg);
 					}
 
-					prolog_msg = MsgParser.format_message(local_epoch, tmp);    
+					prolog_msg = MsgParser.format_message(local_epoch, tmp);
+					prolog_msg = prolog_msg.substring(0, prolog_msg.length() - 1) + ", " +
+							(ev instanceof SentMessage ? "s" : "r") + ")";
+					
 					log_file.println("\nConversion from Jade message");
 					log_file.println(tmp);
                                         log_file.println("to Prolog message");
