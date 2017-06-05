@@ -46,6 +46,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.jpl7.Query;
 
+import it.unige.dibris.TExpRVMAS.core.Callback;
 import it.unige.dibris.TExpRVMAS.core.Monitor;
 import it.unige.dibris.TExpRVMAS.core.Perception;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
@@ -317,6 +318,7 @@ public class Sniffer extends Monitor {
 	private String myContainerName;
 	private String monitorID;
 	private String perception;
+	private Callback callback;
 
 	class SnifferAMSListenerBehaviour extends AMSListenerBehaviour {
 
@@ -528,6 +530,9 @@ public class Sniffer extends Monitor {
 							sendMessageLogToGUI("(" + prolog_msg + ") message has been perceived [CONSISTENT]");
 						} else{
 							sendMessageLogToGUI("ERROR: (" + prolog_msg + ") message has been perceived [INCONSISTENT]");
+							if(callback != null){
+								callback.action();
+							}
 						}
 						prolog_msg = null;
 					}
@@ -536,6 +541,9 @@ public class Sniffer extends Monitor {
 							sendMessageLogToGUI("(" + perception + ") perception has been perceived [CONSISTENT]");
 						} else{
 							sendMessageLogToGUI("ERROR: (" + perception + ") perception has been perceived [INCONSISTENT]");
+							if(callback != null){
+								callback.action();
+							}
 						}
 						perception = null;
 					}
@@ -893,6 +901,11 @@ public class Sniffer extends Monitor {
 		String t1 = "remember(" + monitorID + "," + this.perception + ")";
 		Query q1 = new Query(t1);
 		q1.hasSolution();
+	}
+
+	@Override
+	public void setCallbackWhenFail(Callback callback) {
+		this.callback = callback;
 	}
 
 } /* END of public class Sniffer */

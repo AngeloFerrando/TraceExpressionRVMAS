@@ -22,6 +22,7 @@ import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.exception.NoMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.exception.TraceExpressionFileFormatException;
+import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNeitherAtomicNorAsyncEventTypesException;
 import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNotContractiveException;
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
@@ -49,6 +50,7 @@ public class TraceExpression {
 	 * @throws NullPointerException if pathToFile is null
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
+	 * @throws TraceExpressionNeitherAtomicNorAsyncEventTypesException if the trace expression does not contain only atomic event types (or only async event types)
 	 */
 	public TraceExpression(String pathToFile) throws IOException{
 		if(pathToFile == null){
@@ -94,6 +96,7 @@ public class TraceExpression {
 	 * 
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
+	 * @throws TraceExpressionNeitherAtomicNorAsyncEventTypesException if the trace expression does not contain only atomic event types (or only async event types)
 	 */
 	public void load(String tExpFilePath){
 		//JPLInitializer.createAndCheck("retractall(match(" + protocolName + ", _, _))");
@@ -101,6 +104,9 @@ public class TraceExpression {
 		JPLInitializer.createAndCheck("consult", new Atom(tExpFilePath));
 		if(!isContractive()){
 			throw new TraceExpressionNotContractiveException();
+		}
+		if(!(areEventsAtomic() ^ areEventsAsync())){
+			throw new TraceExpressionNeitherAtomicNorAsyncEventTypesException();
 		}
 	}
 	

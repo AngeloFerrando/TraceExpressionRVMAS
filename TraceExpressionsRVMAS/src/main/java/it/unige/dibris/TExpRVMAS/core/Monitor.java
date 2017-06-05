@@ -132,6 +132,6 @@ public abstract class Monitor extends ToolAgent {
 		return agents;
 	}
 	
-	
+	public abstract void setCallbackWhenFail(Callback callback);
 	
 }
