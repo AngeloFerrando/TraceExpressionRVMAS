@@ -280,6 +280,12 @@ is_contractive(ET>>T, Depth, DeepestSeq, Assoc) :-
   IncDepth is Depth + 1,
   is_contractive(T, IncDepth, DeepestSeq, Assoc1).
 
+
+% filter events inside the trace expression generating a new one where:
+% - all event types ET with reliable(ProtocolName, ET, 0) are removed by the trace expression
+% - all event types ET with reliable(ProtocolName, ET, Perc) and Perc > Threshold are preserved
+% - all event types ET with reliable(ProtocolName, ET, Perc) and Perc <= Threshold become optional
+%   ET:T ---optional---> ((ET:epsilon)\/epsilon)*T
 filter_events(T, TFiltered, Threshold, ProtocolName) :-
   empty_assoc(A),
   filter_events(T, TFiltered, A, Threshold, ProtocolName).
@@ -288,16 +294,16 @@ filter_events(epsilon, epsilon, _, _, _) :- !.
 filter_events(T, TFiltered, Assoc, _, _) :-
   get_assoc(T, Assoc, TFiltered), !.
 filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
-  match(ProtocolName, E, ET), reliable(ProtocolName, E, 0), !,
+  reliable(ProtocolName, ET, 0), !,
   put_assoc(ET:T, Assoc, TFiltered, Assoc1),
   filter_events(T, TFiltered, Assoc1, Threshold, ProtocolName).
 filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
-  match(ProtocolName, E, ET), reliable(ProtocolName, E, 1), !,
+  reliable(ProtocolName, ET, 1), !,
   put_assoc(ET:T, Assoc, TFiltered, Assoc1),
   filter_events(T, T1, Assoc1, Threshold, ProtocolName),
   TFiltered = ET:T1.
 filter_events(ET:T, TFiltered, Assoc, Threshold, ProtocolName) :-
-  match(ProtocolName, E, ET), reliable(ProtocolName, E, Perc),
+  reliable(ProtocolName, ET, Perc),
   put_assoc(ET:T, Assoc, TFiltered, Assoc1),
   filter_events(T, T1, Assoc1, Threshold, ProtocolName),
   ((Perc =< Threshold) ->
