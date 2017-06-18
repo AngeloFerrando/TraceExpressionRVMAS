@@ -27,25 +27,25 @@ import it.unige.dibris.TExpRVMAS.exception.TraceExpressionNotContractiveExceptio
 import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 
 /**
- * Class representing the Trace Expression used to model the protocols which guide the 
- * runtime verification of the MAS. 
- * 
+ * Class representing the Trace Expression used to model the protocols which guide the
+ * runtime verification of the MAS.
+ *
  * @author angeloferrando
  *
  */
 public class TraceExpression {
-	
+
 	/**
 	 * File containing the trace expression definition
 	 */
 	//private File tExpFile;
 
 	private String protocolName;
-	
+
 	/**
 	 * Constructor of the TraceExpression class
 	 * @param pathToFile is the path to the file containing the trace expression definition
-	 * 
+	 *
 	 * @throws IOException if the file is not found or if there are problems in the generation of the file deriving from the preprocessing phase
 	 * @throws NullPointerException if pathToFile is null
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
@@ -57,17 +57,17 @@ public class TraceExpression {
 			throw new NullPointerException("pathToFile must not be null");
 		}
 		File tExpFile = new File(pathToFile);
-		if(!tExpFile.exists()){ 
+		if(!tExpFile.exists()){
 		    throw new FileNotFoundException(pathToFile + " file not found");
 		}
-		
+
 		BufferedReader tExpFileReader = new BufferedReader(new FileReader(tExpFile));
 		Optional<String> traceExpressionLine = tExpFileReader.lines().filter(s -> s.startsWith("trace_expression(")).findFirst();
 		if(!traceExpressionLine.isPresent() || !traceExpressionLine.get().matches("trace_expression((.+)(\\s*),(\\s*)(.+))")){
 			tExpFileReader.close();
 			throw new TraceExpressionFileFormatException("The trace expression file must contain the trace_expression(protocol_name, T) predicate");
 		}
-		
+
 		String aux = traceExpressionLine.get();
 		tExpFileReader.close();
 		protocolName = aux.substring(aux.indexOf('(') + 1, aux.indexOf(','));
@@ -77,7 +77,7 @@ public class TraceExpression {
 			Iterator<String> it = tExpFileReader.lines().map(s -> {
 				return s.contains("match(") ? s.replace("match(", "match(" + protocolName + ", ") : s;
 			}).iterator();
-		
+
 			while(it.hasNext()){
 				fw.write(it.next() + "\n");
 			}
@@ -87,13 +87,13 @@ public class TraceExpression {
 			fw.close();
 			tExpFileReader.close();
 		}
-		
+
 		load(pathToFile + ".tmp");
 	}
-	
+
 	/**
 	 * Load the trace expression inside the SWI-Prolog environment.
-	 * 
+	 *
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 * @throws TraceExpressionNotContractiveException if the trace expression is not contractive
 	 * @throws TraceExpressionNeitherAtomicNorAsyncEventTypesException if the trace expression does not contain only atomic event types (or only async event types)
@@ -109,12 +109,12 @@ public class TraceExpression {
 			throw new TraceExpressionNeitherAtomicNorAsyncEventTypesException();
 		}
 	}
-	
+
 	/**
 	 * Get the set of Minimal Monitoring Safe partitions (MMS)
 	 * @param conditions that must be satisfied by the partitions returned
 	 * @return the set of Minimal Monitoring Safe partitions satisfying the conditions
-	 * 
+	 *
 	 * @throws NullPointerException if conditions is null
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
@@ -144,12 +144,12 @@ public class TraceExpression {
 		query.close();
 		return mmsPartitions;
 	}*/
-	
+
 	/**
 	 * Get the set of Minimal Monitoring Safe partitions (MMS)
 	 * @param conditions that must be satisfied by the partitions returned
 	 * @return the set of Minimal Monitoring Safe partitions satisfying the conditions
-	 * 
+	 *
 	 * @throws NullPointerException if conditions is null
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
@@ -178,12 +178,12 @@ public class TraceExpression {
 		query.close();
 		return mmsPartitions;
 	}
-	
+
 	/**
 	 * Check if the partition passed as argument is Monitoring Safe for the trace expression
 	 * @param partition to check if is Monitoring Safe
 	 * @return true if the partition is Monitoring Safe, false otherwise
-	 * 
+	 *
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
 	public boolean isMonitoringSafe(Partition<String> partition){
@@ -192,25 +192,25 @@ public class TraceExpression {
 		query.close();
 		return res;
 	}
-	
+
 	/**
 	 * Check if the trace expression is contractive
 	 * @return true if the trace expression is contractive, false otherwise
-	 * 
+	 *
 	 * @throws PrologException if an error occurred during the communication with SWI-Prolog
 	 */
 	private boolean isContractive(){
-		Query query = new Query("is_contractive(" + protocolName + ")");
+		Query query = new Query("is_contractive_aux(" + protocolName + ")");
 		boolean res = query.hasSolution();
 		query.close();
 		return res;
 	}
-	
+
 	/**
 	 * Get a random Monitoring Safe partition
 	 * @param conditions that must be satisfied by the partition returned
 	 * @return the monitoring safe partition selected randomly
-	 * 
+	 *
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 * @throws NullPointerException if conditions is null
 	 */
@@ -234,12 +234,12 @@ public class TraceExpression {
 			throw new NoMonitoringSafePartitionFoundException();
 		}
 	}*/
-	
+
 	/**
 	 * Get a random Monitoring Safe partition
 	 * @param conditions that must be satisfied by the partition returned
 	 * @return the monitoring safe partition selected randomly
-	 * 
+	 *
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 */
 	public Partition<String> getRandomMonitoringSafePartition(List<Condition<String>> conditions) throws NoMonitoringSafePartitionFoundException{
@@ -261,12 +261,12 @@ public class TraceExpression {
 			throw new NoMonitoringSafePartitionFoundException();
 		}
 	}
-	
+
 	/**
 	 * Get the first Monitoring Safe partition generated
 	 * @param conditions that must be satisfied by the partition returned
 	 * @return the monitoring safe partition selected
-	 * 
+	 *
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 * @throws NullPointerException if conditions is null
 	 */
@@ -282,12 +282,12 @@ public class TraceExpression {
 			throw new NoMonitoringSafePartitionFoundException();
 		}
 	}*/
-	
+
 	/**
 	 * Get the first Monitoring Safe partition generated
 	 * @param conditions that must be satisfied by the partition returned
 	 * @return the monitoring safe partition selected
-	 * 
+	 *
 	 * @throws NoMonitoringSafePartitionFoundException if no monitoring safe partition can be retrieved
 	 */
 	public Partition<String> getFirstMonitoringSafePartition(List<Condition<String>> conditions) throws NoMonitoringSafePartitionFoundException{
@@ -301,12 +301,12 @@ public class TraceExpression {
 			throw new NoMonitoringSafePartitionFoundException();
 		}
 	}
-	
+
 	/**
 	 * Get the set of Monitoring Safe partitions (MS)
 	 * @param conditions that must be satisfied by the partitions returned
 	 * @return the set of Monitoring Safe partitions satisfying the conditions
-	 * 
+	 *
 	 * @throws NullPointerException if conditions is null
 	 */
 	/*@SuppressWarnings("unchecked")
@@ -316,14 +316,14 @@ public class TraceExpression {
 		}
 		Query query = new Query("decOne(MSPartition)");
 		return new Iterable<Partition<String>>() {
-			
+
 			@Override
 			public Iterator<Partition<String>> iterator() {
 				return new Iterator<Partition<String>>() {
-					
+
 					Partition<String> lastPartition;
 					boolean end = false;
-					
+
 					@Override
 					public Partition<String> next() {
 						if(end){
@@ -358,7 +358,7 @@ public class TraceExpression {
 							return partitionAux;
 						}
 					}
-					
+
 					@Override
 					public boolean hasNext() {
 						if(end){
@@ -394,12 +394,12 @@ public class TraceExpression {
 			}
 		};
 	}*/
-	
+
 	/**
 	 * Get the set of Monitoring Safe partitions (MS)
 	 * @param conditions that must be satisfied by the partitions returned
 	 * @return the set of Monitoring Safe partitions satisfying the conditions
-	 * 
+	 *
 	 */
 	public Iterable<Partition<String>> getMonitoringSafePartitions(List<Condition<String>> conditions){
 		/*if(conditions == null){
@@ -408,14 +408,14 @@ public class TraceExpression {
 
 		Query query = new Query("decOne(MSPartition, " + protocolName + ")");
 		return new Iterable<Partition<String>>() {
-			
+
 			@Override
 			public Iterator<Partition<String>> iterator() {
 				return new Iterator<Partition<String>>() {
-					
+
 					Partition<String> lastPartition;
 					boolean end = false;
-					
+
 					@Override
 					public Partition<String> next() {
 						if(end){
@@ -450,7 +450,7 @@ public class TraceExpression {
 							return partitionAux;
 						}
 					}
-					
+
 					@Override
 					public boolean hasNext() {
 						if(end){
@@ -495,7 +495,7 @@ public class TraceExpression {
 	}
 
 	/**
-	 * Get the information about the events atomicity 
+	 * Get the information about the events atomicity
 	 * (The events must be either all atomic or all async)
 	 * @return true if all events are atomic, false otherwise
 	 */
@@ -508,9 +508,9 @@ public class TraceExpression {
 		query2.close();
 		return res1 && !res2;
 	}
-	
+
 	/**
-	 * Get the information about the events concurrency 
+	 * Get the information about the events concurrency
 	 * (The events must be either all atomic or all async)
 	 * @return true if all events are async, false otherwise
 	 */
@@ -523,5 +523,5 @@ public class TraceExpression {
 		query2.close();
 		return !res1 && res2;
 	}
-	
+
 }
