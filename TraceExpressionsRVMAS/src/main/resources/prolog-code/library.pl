@@ -284,6 +284,10 @@ is_contractive(ET>>T, Depth, DeepestSeq, Assoc) :-
   put_assoc(ET>>T, Assoc, Depth, Assoc1),
   IncDepth is Depth + 1,
   is_contractive(T, IncDepth, DeepestSeq, Assoc1).
+is_contractive(var(X, T), Depth, DeepestSeq, Assoc) :-
+  put_assoc(var(X, T), Assoc, _, Assoc1),
+  IncDepth is Depth + 1,
+  is_contractive(T, IncDepth, DeepestSeq, Assoc1).
 
 % filter_events(T, TFiltered, Threshold, ProtocolName) :-
 %   empty_assoc(A),
@@ -355,22 +359,25 @@ filter_events(ET:T, TFiltered, Threshold, ProtocolName) :-
 filter_events(T1\/T2, TFiltered, Threshold, ProtocolName) :-
   filter_events(T1, TFiltered1, Threshold, ProtocolName),
   filter_events(T2, TFiltered2, Threshold, ProtocolName),
-  TFiltered = TFiltered1 \/ TFiltered2, !.
-filter_events(T1|T2, TFiltered, Threshold, ProtocolName) :-
+  TFiltered = (TFiltered1 \/ TFiltered2), !.
+filter_events(T1|T2, TFiltered1|TFiltered2, Threshold, ProtocolName) :-
   filter_events(T1, TFiltered1, Threshold, ProtocolName),
-  filter_events(T2, TFiltered2, Threshold, ProtocolName),
-  fork(TFiltered1, TFiltered2, TFiltered), !.
-filter_events(T1*T2, TFiltered, Threshold, ProtocolName) :-
+  filter_events(T2, TFiltered2, Threshold, ProtocolName), !.
+  %fork(TFiltered1, TFiltered2, TFiltered), !.
+filter_events(T1*T2, TFiltered1*TFiltered2, Threshold, ProtocolName) :-
   filter_events(T1, TFiltered1, Threshold, ProtocolName),
-  filter_events(T2, TFiltered2, Threshold, ProtocolName),
-  concat(TFiltered1, TFiltered2, TFiltered), !.
-filter_events(T1/\T2, TFiltered, Threshold, ProtocolName) :-
+  filter_events(T2, TFiltered2, Threshold, ProtocolName), !.
+  %concat(TFiltered1, TFiltered2, TFiltered), !.
+filter_events(T1/\T2, TFiltered1/\TFiltered2, Threshold, ProtocolName) :-
   filter_events(T1, TFiltered1, Threshold, ProtocolName),
-  filter_events(T2, TFiltered2, Threshold, ProtocolName),
-  conj(TFiltered1, TFiltered2, TFiltered), !.
+  filter_events(T2, TFiltered2, Threshold, ProtocolName), !.
+  %conj(TFiltered1, TFiltered2, TFiltered), !.
 filter_events(ET>>T, TFiltered, Threshold, ProtocolName) :-
-  filter_events(T, T1, Threshold, ProtocolName),
-  TFiltered = (ET>>T1), !.
+  filter_events(T, TFiltered1, Threshold, ProtocolName),
+  TFiltered = (ET>>TFiltered1), !.
+filter_events(var(X, T), TFiltered, Threshold, ProtocolName) :-
+  filter_events(T, TFiltered1, Threshold, ProtocolName),
+  TFiltered = var(X, TFiltered1), !.
 
 are_all_events_atomic_aux(ProtocolName) :-
   trace_expression(ProtocolName, T),
@@ -420,6 +427,8 @@ are_all_events_atomic(ET>>T) :-
   not(last(L, "s")),
   not(last(L, "r")),
   are_all_events_atomic(T), !.
+are_all_events_atomic(var(_, T)) :-
+  are_all_events_atomic(T), !.
 
 are_all_events_async_aux(ProtocolName) :-
   trace_expression(ProtocolName, T),
@@ -439,6 +448,8 @@ are_all_events_async(ET>>T) :-
   term_string(ET, S),
   split_string(S, "_", "", L),
   (last(L, "s");last(L, "r")),
+  are_all_events_async(T), !.
+are_all_events_async(var(_, T)) :-
   are_all_events_async(T), !.
 
 
@@ -535,6 +546,13 @@ put_assoc((IntType>>Type1),Assoc,(ProjectedType,Depth),NewAssoc),
 %(involves(IntType, ProjectedAgents) ->
 IncDepth is Depth+1,
 project(ProtocolName, NewAssoc,IncDepth,DeepestSeq,Type1,ProjectedAgents,ProjectedType1),ProjectedType=(IntType>>ProjectedType1).%;
+
+project(ProtocolName, Assoc, Depth, DeepestSeq, var(X,Type1), ProjectedAgents, ProjectedType) :-
+!,
+put_assoc(var(X,Type1),Assoc,(ProjectedType,Depth),NewAssoc),
+IncDepth is Depth + 1,
+project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
+ProjectedType = var(X, ProjectedType1).
 
 /****************************************************************************/
 /* 	  INVOLVES PREDICATE: can be redefined to consider agent roles      */

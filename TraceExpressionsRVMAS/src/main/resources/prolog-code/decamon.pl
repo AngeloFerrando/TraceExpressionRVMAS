@@ -113,6 +113,9 @@ involved(IntType>>T, InvolvedAgents, A, ProtocolName) :- % propagation
   involved(T, InvolvedT, A1, ProtocolName),
   involved_type(IntType, InvolvedIntType, ProtocolName),
   union(InvolvedT, InvolvedIntType, InvolvedAgents).
+involved(var(_, T), InvolvedAgents, A, ProtocolName) :-
+  put_assoc(var(_, T), A, _, A1),
+  involved(T, InvolvedAgents, A1, ProtocolName).
 
 % first_it unifies the second argument with the set of interaction types which are
 % at the beginning of the trace expression (it starts with them)
@@ -138,6 +141,10 @@ first_it(T1/\T2, First) :-
   first_it(T1, First1),
   first_it(T2, First2),
   union(First1, First2, First).
+first_it(_>>T, First) :-
+  first_it(T, First).
+first_it(var(_, T), First) :-
+  first_it(T, First).
 
 % last_it unifies the second argument with the set of interaction types which are
 % at the end of the trace expression (it ends with them)
@@ -177,6 +184,12 @@ last_it(T1/\T2, Last, A) :-
   last_it(T1, Last1, A1),
   last_it(T2, Last2, A1),
   union(Last1, Last2, Last).
+last_it(IntType>>T, Last, A) :-
+  put_assoc(IntType>>T, A, _, A1),
+  last_it(T, Last, A1).
+last_it(var(X, T), Last, A) :-
+  put_assoc(var(X, T), A, _, A1),
+  last_it(T, Last, A1).
 
 % add_to_partitions adds each set in the first argument list to each set contained in the
 % second argument list.
@@ -222,6 +235,9 @@ pre_processing(IntType >> T, TP, InvolvedAgents) :-
   T1 = (NotIntType:T1) \/ epsilon,
   T2 = IntType:T2,
   TP = (T1 | (T2 /\ TP1)).
+pre_processing(var(X, T), TP, InvolvedAgents) :-
+  pre_processing(T, TP1, InvolvedAgents),
+  TP = var(X, TP1).
 
 % fuse_partitions fuses the sets contained in the first argument list
 % Example: fuse_partitions([[a,b],[b]], [[a,b]]).
@@ -427,6 +443,10 @@ distribute(T1/\T2, P, Assoc, Agents, ProtocolName) :-
   distribute(T2, P2, Assoc1, Agents, ProtocolName),
   union(P1, P2, Ps),
   fuse_partitions(Ps, P).
+distribute(var(X, T), P, Assoc, Agents, ProtocolName) :-
+  put_assoc(var(X, T), Assoc, _, Assoc1),
+  distribute(T, P, Assoc1, Agents, ProtocolName).
+
 
 
 %%% Utility and testing predicates %%%
@@ -710,3 +730,9 @@ is_monitoring_safe(P, T1/\T2, Assoc, ProtocolName) :-
   put_assoc(T1/\T2, Assoc, _, Assoc1),
   is_monitoring_safe(P, T1, Assoc1, ProtocolName),
   is_monitoring_safe(P, T2, Assoc1, ProtocolName).
+is_monitoring_safe(P, IntType>>T, Assoc, ProtocolName) :-
+  put_assoc(IntType>>T, Assoc, _, Assoc1),
+  is_monitoring_safe(P, T, Assoc1, ProtocolName).
+is_monitoring_safe(P, var(X, T), Assoc, ProtocolName) :-
+  put_assoc(var(X, T), Assoc, _, Assoc1),
+  is_monitoring_safe(P, T, Assoc1, ProtocolName).
