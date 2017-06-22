@@ -1,0 +1,18 @@
+Monitoring protocol
+@(msg>>S_1/\msg_ack_1>>S_2/\msg_ack_2>>S_3,[S_1=msg1:msg2:S_1,S_2=msg1:ack1:S_2,S_3=msg2:ack2:S_3])
+
+Monitoring protocol
+@(msg>>S_1/\msg_ack_1>>S_2/\msg_ack_2>>S_3,[S_1=msg1:msg2:S_1,S_2=msg1:ack1:S_2,S_3=msg2:ack2:S_3])
+
+
+Message
+act(agent(alice),content(action1))
+leads from state 
+@(msg>>S_1/\msg_ack_1>>S_2/\msg_ack_2>>S_3,[S_1=msg1:msg2:S_1,S_2=msg1:ack1:S_2,S_3=msg2:ack2:S_3])
+to state
+@(msg>>S_1/\ (msg_ack_1>>S_2/\msg_ack_2>>S_3),[S_1=msg1:msg2:S_1,S_2=msg1:ack1:S_2,S_3=msg2:ack2:S_3])
+
+*** NO MESSAGES EXCHANGED IN THE LAST 0 MILLISECONDS ***
+
+*** DYNAMIC TYPE-CHECKING ERROR ***
+Message act(agent(alice),content(action1)) cannot be accepted in the current state alt_bit_4

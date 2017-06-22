@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>it.unige.dibris</groupId>
   <artifactId>TraceExpressionsRVMAS</artifactId>
-  <version>1</version>
+  <version>0.0.1-SNAPSHOT</version>
   <dependencies>
 		<dependency>
 		    <groupId>com.tilab.jade</groupId>
@@ -32,14 +32,18 @@
 		<url>http://jade.tilab.com/maven/</url>
 	</repository>
   </repositories>
-  <distributionManagement>
-    <repository>
-        <id>repo</id>
-        <url>https://github.com/AngeloFerrando/TraceExpressionsRVMAS/releases</url>
-    </repository>
-    <snapshotRepository>
-        <id>snapshot-repo</id>
-        <url>https://github.com/AngeloFerrando/TraceExpressionsRVMAS/snapshots</url>
-    </snapshotRepository>
-</distributionManagement>
+     <build>
+	<plugins>
+	    <plugin>
+	        <groupId>org.apache.maven.plugins</groupId>
+	        <artifactId>maven-release-plugin</artifactId>
+	        <version>2.0-beta-9</version>
+        </plugin>
+    </plugins>
+  </build>
+  <scm>
+	<connection>scm:git:git@github.com:AngeloFerrando/TraceExpressionsRVMAS.git</connection>
+	<url>scm:git:git@github.com:AngeloFerrando/TraceExpressionsRVMAS.git</url>
+	<developerConnection>scm:git:git@github.com:AngeloFerrando/TraceExpressionsRVMAS.git</developerConnection>
+  </scm>
 </project>
