@@ -47,7 +47,7 @@ public class Boot {
 	private boolean minimal;
 	
 	/**
-	 * Default constructor without parameters
+	 * Default constructor
 	 */
 	private Boot(){}
 
