@@ -30,10 +30,6 @@ public class AltBitMain {
 		Profile profile = new ProfileImpl();
 		AgentContainer container = runtime.createMainContainer( profile );	
 		
-		/* Centralized monitor */
-		//Monitor centralizedM = SnifferMonitorFactory.createAndRunCentralizedMonitor(tExp, container);
-		//container.acceptNewAgent("centralizedMonitor", centralizedM);
-		
 		/* Decentralized monitors (random MMS) */
 		//for(Monitor m : SnifferMonitorFactory.createDecentralizedMonitors(tExp, PartitionType.MinimalMonitoringSafe, null)){
 		//	container.acceptNewAgent(m.getMonitorName(), m).start();
@@ -60,6 +56,10 @@ public class AltBitMain {
 		david.setArguments(new String[] { "charlie", "ack2" });
 		AgentController davidC = container.acceptNewAgent("david", david);
 		agents.add(davidC);
+		
+		/* Centralized monitor */
+		//SnifferMonitorFactory.createAndRunCentralizedMonitor(tExp, container, agents);
+		//container.acceptNewAgent("centralizedMonitor", centralizedM);
 		
 		/* Decentralized monitors (first MS partition) */
 		

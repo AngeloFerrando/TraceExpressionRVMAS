@@ -63,6 +63,30 @@ public class GuiProperties{
 	}
 
    public static final Icon getIcon(String key){
+	 /*  switch(key){
+	   case "SnifferAction.ClearCanvasActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(), "images/litter2.gif");
+	   case "SnifferAction.DisplayLogFileActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(), "images/open.gif");
+	   case "SnifferAction.WriteLogFileActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(), "images/save1.gif");
+	   case "SnifferAction.MessageFileActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(), "images/textfile.gif");
+	   case "SnifferAction.DoSnifferActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(),"images/bullet1.gif");
+	   case "SnifferAction.DoNotSnifferActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(),"images/bullet2.gif");
+	   case "SnifferAction.ShowOnlyActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(),"images/bullet4.gif");
+		   
+	   case "SnifferAction.ExitActionIcon":
+		   return (Icon) LookAndFeel.makeIcon(foo.getClass(), "images/exit.gif");
+		   default:
+			   return null;
+	   }
+	   */
+	Object o = MyDefaults.containsKey(key);
+	Icon iii = MyDefaults.getIcon("SnifferAction.DisplayLogFileActionIcon");
     Icon i = MyDefaults.getIcon(key);
         if (i == null){
 	  	System.out.println("Mistake with Icon");
