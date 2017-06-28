@@ -6,6 +6,8 @@ import java.util.Random;
 import java.util.Set;
 
 import org.jpl7.PrologException;
+import org.jpl7.Query;
+import org.jpl7.Term;
 
 import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
@@ -16,6 +18,7 @@ import it.unige.dibris.TExpRVMAS.exception.DecentralizedPartitionNotFoundExcepti
 import it.unige.dibris.TExpRVMAS.exception.JADEContainerInitializationException;
 import it.unige.dibris.TExpRVMAS.exception.NoMinimalMonitoringSafePartitionFoundException;
 import it.unige.dibris.TExpRVMAS.exception.NotMonitoringSafePartitionException;
+import it.unige.dibris.TExpRVMAS.utils.JPL.JPLInitializer;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
@@ -42,24 +45,24 @@ public class SnifferMonitorFactory {
 			throw new NullPointerException("tExp and agents must not be null");
 		}
 		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp, agents);
-		/*Query query = new Query("involved(InvolvedAgents)");
-		String agents;
+		Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
+		String agentsStr;
 		if(!query.hasSolution()){
-			agents = "[]";
+			agentsStr = "[]";
 		} else{
 			Term invAgentsTerm = query.oneSolution().get("InvolvedAgents");
 			List<Term> invAgentsTermList = JPLInitializer.fromCompoundToList(invAgentsTerm);
-			agents = "[";
+			agentsStr = "[";
 			for(Term agent : invAgentsTermList){
-				agents += agent + ",";
+				agentsStr += agent + ",";
 			}
-			agents = agents.substring(0, agents.length() - 1) + "]";
-		}*/
-		String agentsStr = "[";
+			agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
+		}
+		/*String agentsStr = "[";
 		for(AgentController agent : agents){
 			agentsStr += agent.getName() + ",";
 		}
-		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
+		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";*/
 		s.setArguments(new String[]{
 				"sniffer_centralized" + ".txt",
 				agentsStr
@@ -82,24 +85,25 @@ public class SnifferMonitorFactory {
 			throw new NullPointerException("tExp, container and agents must not be null");
 		}
 		Sniffer s = new Sniffer("sniffer_monitor_centralized", tExp, agents);
-		/*Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
-		String agents;
+		Query query = new Query("involved(InvolvedAgents, " + tExp.getProtocolName() + ")");
+		String agentsStr;
 		if(!query.hasSolution()){
-			agents = "[]";
+			agentsStr = "[]";
 		} else{
 			Term invAgentsTerm = query.oneSolution().get("InvolvedAgents");
 			List<Term> invAgentsTermList = JPLInitializer.fromCompoundToList(invAgentsTerm);
-			agents = "[";
+			agentsStr = "[";
 			for(Term agent : invAgentsTermList){
-				agents += agent + ",";
+				agentsStr += agent + ",";
 			}
-			agents = agents.substring(0, agents.length() - 1) + "]";
-		}*/
+			agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
+		}
+		/*
 		String agentsStr = "[";
 		for(AgentController agent : agents){
 			agentsStr += agent.getName() + ",";
 		}
-		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";
+		agentsStr = agentsStr.substring(0, agentsStr.length() - 1) + "]";*/
 		s.setArguments(new String[]{
 				"sniffer_centralized" + ".txt",
 				agentsStr
