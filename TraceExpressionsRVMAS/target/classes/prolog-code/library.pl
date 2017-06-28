@@ -2,8 +2,8 @@
 :- use_module(library(coinduction)).
 :- coinductive substitution_aux/3.
 :- coinductive filter_events/4.
-:- coinductive are_all_events_atomic/1.
-:- coinductive are_all_events_async/1.
+:- coinductive are_all_events_atomic/2.
+:- coinductive are_all_events_async/2.
 :- dynamic message_list/1, str/1, attrType/3, agents/1.
 
 debug(on).
@@ -41,13 +41,13 @@ next(ProtocolName, T1/\T2, E, T, S) :-
   merge(S1, S2, S),
   conj(T3, T4, T).
 next(ProtocolName, ET>>T, E, ET>>T1, S) :-
-  event(E),
+  event(ProtocolName, E),
   genvar(ET, ETFree, S1),
   (match(ProtocolName, E, ETFree) *->
     (clear(S1, S2),
      next(ProtocolName, T, E, T1, S3),
      merge(S2, S3, S));
-     (T=T1)).
+     (T=T1, S = [])).
 next(ProtocolName, var(X, T), E, T2, S) :-
   next(ProtocolName, T, E, T1, S1),
   (syntactic_member_couples((X=V), S1) ->

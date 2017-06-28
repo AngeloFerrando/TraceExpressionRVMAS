@@ -1,7 +1,5 @@
 package it.unige.dibris.TExpRVMAS.core.examples.alt_bit;
 
-import it.unige.dibris.TExpRVMAS.core.Monitor;
-import it.unige.dibris.TExpRVMAS.core.PerceptionFactory;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;

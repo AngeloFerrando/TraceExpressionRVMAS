@@ -66,7 +66,7 @@ decAMonJADE(MMsPartitions, ProtocolName) :-
 % in the interaction type passed as first argument
 % Example: involved_type(msg1, [alice, bob]).
 involved_type(IntType, InvolvedAgents, ProtocolName) :-
-  findall(Agent, (match(ProtocolName, msg(_, sender(Agent), _, _), IntType); match(ProtocolName, msg(_, _, receiver(Agent), _), IntType)), Aux),
+  findall(Agent, (match(ProtocolName, msg(_, sender(Agent), _, _, _), IntType); match(ProtocolName, msg(_, _, receiver(Agent), _, _), IntType)), Aux),
   list_to_set(Aux, InvolvedAgents).
 
 involved(InvolvedAgents, ProtocolName) :-
@@ -229,7 +229,13 @@ pre_processing(IntType >> T, TP, InvolvedAgents) :-
   findall(Msg, (match(Msg, _), Msg = msg(S,R,_), member(S, InvolvedAgents), member(R, InvolvedAgents)), World1),
   list_to_set(World1, World),
   subtract(World, Interactions, NotInteractions),
-  string_concat(not, IntType, NotIntType),
+  (compound(IntType) ->
+    (findall(Arg, arg(_, IntType, Arg), Args),
+with_output_to(atom(IntTypeStr), maplist(write, Args))
+     %atom_string(Args, IntTypeStr)
+     );
+    (IntTypeStr = IntType)),
+  string_concat(not, IntTypeStr, NotIntType),
   retractall(match(_, NotIntType)),
   asserta(match(Interaction, NotIntType) :- member(Interaction, NotInteractions)),
   T1 = (NotIntType:T1) \/ epsilon,
@@ -635,7 +641,7 @@ count_singleton_groups(Prev, [H|T], Singleton) :-
      count_singleton_groups(Prev, T, Singleton)).
 
 
-critical_point(IntType:T, Constraints, ProtocolName) :-
+critical_point(IntType:T, Constraints, ProtocolName) :- 
   involved_type(IntType, InvolvedAgents1, ProtocolName),
   first_it(T, FirstIntTypes),
   findall((InvolvedAgents1, InvolvedAgents2), % find all agent sets with empty intersection with the agents involved in the interaction type

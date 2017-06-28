@@ -71,6 +71,7 @@ public class TraceExpression {
 		String aux = traceExpressionLine.get();
 		tExpFileReader.close();
 		protocolName = aux.substring(aux.indexOf('(') + 1, aux.indexOf(','));
+		/*
 		FileWriter fw = new FileWriter(pathToFile + ".tmp");
 		try{
 			tExpFileReader = new BufferedReader(new FileReader(tExpFile));
@@ -87,8 +88,9 @@ public class TraceExpression {
 			fw.close();
 			tExpFileReader.close();
 		}
-
-		load(pathToFile + ".tmp");
+		*/
+		//load(pathToFile + ".tmp");
+		load(pathToFile);
 	}
 
 	/**

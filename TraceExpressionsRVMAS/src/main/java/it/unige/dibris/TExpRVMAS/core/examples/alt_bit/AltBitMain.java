@@ -6,8 +6,6 @@ import java.util.List;
 
 import it.unige.dibris.TExpRVMAS.core.Monitor;
 import it.unige.dibris.TExpRVMAS.core.SnifferMonitorFactory;
-import it.unige.dibris.TExpRVMAS.core.decentralized.Condition;
-import it.unige.dibris.TExpRVMAS.core.decentralized.ConditionsFactory;
 import it.unige.dibris.TExpRVMAS.core.decentralized.Partition;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import it.unige.dibris.TExpRVMAS.exception.DecentralizedPartitionNotFoundException;
