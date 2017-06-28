@@ -500,9 +500,9 @@ public class TraceExpression {
 	 * @return true if all events are atomic, false otherwise
 	 */
 	public boolean areEventsAtomic() {
-		Query query1 = new Query("are_all_events_atomic_aux(" + protocolName + ")");
+		Query query1 = new Query("are_all_events_atomic(" + protocolName + ")");
 		boolean res1 = query1.hasSolution();
-		Query query2 = new Query("are_all_events_async_aux(" + protocolName + ")");
+		Query query2 = new Query("are_all_events_async(" + protocolName + ")");
 		boolean res2 = query2.hasSolution();
 		query1.close();
 		query2.close();

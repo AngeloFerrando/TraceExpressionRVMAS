@@ -379,9 +379,9 @@ filter_events(var(X, T), TFiltered, Threshold, ProtocolName) :-
   filter_events(T, TFiltered1, Threshold, ProtocolName),
   TFiltered = var(X, TFiltered1), !.
 
-are_all_events_atomic_aux(ProtocolName) :-
+are_all_events_atomic(ProtocolName) :-
   trace_expression(ProtocolName, T),
-  are_all_events_atomic(T).
+  are_all_events_atomic(T, ProtocolName).
 
 % are_all_events_atomic(T) :-
 %   empty_assoc(A),
@@ -410,47 +410,55 @@ are_all_events_atomic_aux(ProtocolName) :-
 %   not(last(L, "r")),
 %   are_all_events_atomic(T, Assoc1).
 
-are_all_events_atomic(epsilon).
-are_all_events_atomic(ET:T) :-
-  term_string(ET, S),
-  split_string(S, "_", "", L),
-  not(last(L, "s")),
-  not(last(L, "r")),
-  are_all_events_atomic(T), !.
-are_all_events_atomic(T) :-
+are_all_events_atomic(epsilon, _).
+are_all_events_atomic(ET:T, ProtocolName) :-
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), (Type == s; Type == r)), []),
+  are_all_events_atomic(T, ProtocolName), !.
+  % term_string(ET, S),
+  % split_string(S, "_", "", L),
+  % not(last(L, "s")),
+  % not(last(L, "r")),
+  % are_all_events_atomic(T), !.
+are_all_events_atomic(T, ProtocolName) :-
   (T = (T1\/T2); T = (T1|T2); T = (T1*T2); T = (T1/\T2)), !,
-  are_all_events_atomic(T1),
-  are_all_events_atomic(T2), !.
-are_all_events_atomic(ET>>T) :-
-  term_string(ET, S),
-  split_string(S, "_", "", L),
-  not(last(L, "s")),
-  not(last(L, "r")),
-  are_all_events_atomic(T), !.
-are_all_events_atomic(var(_, T)) :-
-  are_all_events_atomic(T), !.
+  are_all_events_atomic(T1, ProtocolName),
+  are_all_events_atomic(T2, ProtocolName), !.
+are_all_events_atomic(ET>>T, ProtocolName) :-
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), (Type == s; Type == r)), []),
+  are_all_events_atomic(T, ProtocolName), !.
+  % term_string(ET, S),
+  % split_string(S, "_", "", L),
+  % not(last(L, "s")),
+  % not(last(L, "r")),
+  % are_all_events_atomic(T, ProtocolName), !.
+are_all_events_atomic(var(_, T), ProtocolName) :-
+  are_all_events_atomic(T, ProtocolName), !.
 
-are_all_events_async_aux(ProtocolName) :-
+are_all_events_async(ProtocolName) :-
   trace_expression(ProtocolName, T),
-  are_all_events_async(T).
+  are_all_events_async(T, ProtocolName).
 
-are_all_events_async(epsilon).
-are_all_events_async(ET:T) :-
-  term_string(ET, S),
-  split_string(S, "_", "", L),
-  (last(L, "s");last(L, "r")),
-  are_all_events_async(T), !.
-are_all_events_async(T) :-
+are_all_events_async(epsilon, _).
+are_all_events_async(ET:T, ProtocolName) :-
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), var(Type)), []),
+  are_all_events_async(T, ProtocolName), !.
+  % term_string(ET, S),
+  % split_string(S, "_", "", L),
+  % (last(L, "s");last(L, "r")),
+  % are_all_events_async(T), !.
+are_all_events_async(T, ProtocolName) :-
   (T = (T1\/T2); T = (T1|T2); T = (T1*T2); T = (T1/\T2)), !,
-  are_all_events_async(T1),
-  are_all_events_async(T2), !.
-are_all_events_async(ET>>T) :-
-  term_string(ET, S),
-  split_string(S, "_", "", L),
-  (last(L, "s");last(L, "r")),
-  are_all_events_async(T), !.
-are_all_events_async(var(_, T)) :-
-  are_all_events_async(T), !.
+  are_all_events_async(T1, ProtocolName),
+  are_all_events_async(T2, ProtocolName), !.
+are_all_events_async(ET>>T, ProtocolName) :-
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), var(Type)), []),
+  are_all_events_async(T, ProtocolName), !.
+  % term_string(ET, S),
+  % split_string(S, "_", "", L),
+  % (last(L, "s");last(L, "r")),
+  % are_all_events_async(T), !.
+are_all_events_async(var(_, T), ProtocolName) :-
+  are_all_events_async(T, ProtocolName), !.
 
 
 % are_all_events_async(T) :-
