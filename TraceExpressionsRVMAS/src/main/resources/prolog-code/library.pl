@@ -246,7 +246,9 @@ accept(N,T1,[E|L],T3) :-
 
 is_contractive_aux(ProtocolName) :-
   trace_expression(ProtocolName, T),
-  is_contractive(T).
+  threshold(Threshold),
+  filter_events(T, TFiltered, Threshold, ProtocolName),
+  is_contractive(TFiltered).
 
 is_contractive(T) :-
   empty_assoc(A),
@@ -588,7 +590,9 @@ initialize(LogFileName, MonitorID, Agents, ProtocolName) :-
   % The argument of diff (milliseconds after which we assume that a message is "old" enough, and no older messages will arrive after) should be the same used by the progress agent to call the "progress" goal
   recorda(MonitorID, diff(0)),
   trace_expression(ProtocolName, T),
-  project(ProtocolName, T, Agents, ProjectedType),
+  threshold(Threshold),
+  filter_events(T, TFiltered, Threshold, ProtocolName),
+  project(ProtocolName, TFiltered, Agents, ProjectedType),
   clean_and_record(MonitorID, current_state(ProtocolName, ProjectedType)),
   clean_and_record(MonitorID, message_list([])),
   open(LogFileName,append,Str),

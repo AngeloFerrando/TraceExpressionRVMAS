@@ -641,7 +641,7 @@ count_singleton_groups(Prev, [H|T], Singleton) :-
      count_singleton_groups(Prev, T, Singleton)).
 
 
-critical_point(IntType:T, Constraints, ProtocolName) :- 
+critical_point(IntType:T, Constraints, ProtocolName) :-
   involved_type(IntType, InvolvedAgents1, ProtocolName),
   first_it(T, FirstIntTypes),
   findall((InvolvedAgents1, InvolvedAgents2), % find all agent sets with empty intersection with the agents involved in the interaction type
@@ -693,8 +693,10 @@ is_monitoring_safe(Partition, ProtocolName) :-
   is_monitoring_safe(Partition, T, ProtocolName).
 is_monitoring_safe(Partition, T, ProtocolName) :-
   empty_assoc(Assoc),
-  involved(T, InvolvedAgents, ProtocolName),
-  pre_processing(T, T1, InvolvedAgents), !,
+  threshold(Threshold),
+  filter_events(T, TFiltered, Threshold, ProtocolName),
+  involved(TFiltered, InvolvedAgents, ProtocolName),
+  pre_processing(TFiltered, T1, InvolvedAgents), !,
   is_monitoring_safe(Partition, T1, Assoc, ProtocolName), !.
 
 is_monitoring_safe(_, epsilon, _, _) :- !.
