@@ -18,11 +18,11 @@ public class Receiver extends Agent {
 			
 			@Override
 			public void action() {
-				ACLMessage msgR= blockingReceive(); 
-				if(msgR != null)
-		        	System.out.println("[" + getLocalName() + "]: receive " + msgR.getContent() + " from " + sender);
+				//ACLMessage msgR= blockingReceive(); 
+				//if(msgR != null)
+		        //	System.out.println("[" + getLocalName() + "]: receive " + msgR.getContent() + " from " + sender);
 				
-				doWait(2000);
+				doWait(20000);
 				
 				ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 				msg.addReceiver(new AID(sender, AID.ISLOCALNAME));

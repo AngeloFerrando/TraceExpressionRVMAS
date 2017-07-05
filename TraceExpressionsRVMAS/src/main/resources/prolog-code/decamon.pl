@@ -46,7 +46,7 @@
 
 :- use_module(library(coinduction)).
 :- dynamic match/2.
-:- coinductive pre_processing/3.
+:- coinductive pre_processing/4.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%   Predicates used by JAVA   %%%%%%%%%%%%%%%%%
@@ -66,7 +66,7 @@ decAMonJADE(MMsPartitions, ProtocolName) :-
 % in the interaction type passed as first argument
 % Example: involved_type(msg1, [alice, bob]).
 involved_type(IntType, InvolvedAgents, ProtocolName) :-
-  findall(Agent, (match(ProtocolName, msg(_, sender(Agent), _, _, _), IntType); match(ProtocolName, msg(_, _, receiver(Agent), _, _), IntType)), Aux),
+  findall(Agent, (match(ProtocolName, msg(_, sender(Agent), _, _, _, _), IntType); match(ProtocolName, msg(_, _, receiver(Agent), _, _, _), IntType)), Aux),
   list_to_set(Aux, InvolvedAgents).
 
 involved(InvolvedAgents, ProtocolName) :-
@@ -204,29 +204,29 @@ add_to_partitions([Set|T], Ps, Res) :-
   union(Res1, Res2, Res).
 
 % pre_processing phase necessary in order to remove >> operator
-pre_processing(epsilon, epsilon, _).
-pre_processing(IntType:T, IntType:TP, InvolvedAgents) :-
-  pre_processing(T, TP, InvolvedAgents).
-pre_processing(T1\/T2, TP1\/TP2, InvolvedAgents) :-
-  pre_processing(T1, TP1, InvolvedAgents),
-  pre_processing(T2, TP2, InvolvedAgents).
-pre_processing(T1|T2, TP1|TP2, InvolvedAgents) :-
-  pre_processing(T1, TP1, InvolvedAgents),
-  pre_processing(T2, TP2, InvolvedAgents).
-pre_processing(T1*T2, TP1*TP2, InvolvedAgents) :-
+pre_processing(epsilon, epsilon, _, _).
+pre_processing(IntType:T, IntType:TP, InvolvedAgents, ProtocolName) :-
+  pre_processing(T, TP, InvolvedAgents, ProtocolName).
+pre_processing(T1\/T2, TP1\/TP2, InvolvedAgents, ProtocolName) :-
+  pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
+  pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
+pre_processing(T1|T2, TP1|TP2, InvolvedAgents, ProtocolName) :-
+  pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
+  pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
+pre_processing(T1*T2, TP1*TP2, InvolvedAgents, ProtocolName) :-
   may_eventually_halt(T1), !,
-  pre_processing(T1, TP1, InvolvedAgents),
-  pre_processing(T2, TP2, InvolvedAgents).
-pre_processing(T1*_, TP1, InvolvedAgents) :-
-  pre_processing(T1, TP1, InvolvedAgents).
-pre_processing(T1/\T2, TP1/\TP2, InvolvedAgents) :-
-  pre_processing(T1, TP1, InvolvedAgents),
-  pre_processing(T2, TP2, InvolvedAgents).
-pre_processing(IntType >> T, TP, InvolvedAgents) :-
-  pre_processing(T, TP1, InvolvedAgents),
-  findall(Msg, match(Msg, IntType), Interactions1),
+  pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
+  pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
+pre_processing(T1*_, TP1, InvolvedAgents, ProtocolName) :-
+  pre_processing(T1, TP1, InvolvedAgents, ProtocolName).
+pre_processing(T1/\T2, TP1/\TP2, InvolvedAgents, ProtocolName) :-
+  pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
+  pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
+pre_processing(IntType >> T, TP, InvolvedAgents, ProtocolName) :-
+  pre_processing(T, TP1, InvolvedAgents, ProtocolName),
+  findall(Msg, match(ProtocolName, Msg, IntType), Interactions1),
   list_to_set(Interactions1, Interactions),
-  findall(Msg, (match(Msg, _), Msg = msg(S,R,_), member(S, InvolvedAgents), member(R, InvolvedAgents)), World1),
+  findall(Msg, (match(ProtocolName, Msg, _), Msg = msg(_,S,R,_,_,_), member(S, InvolvedAgents), member(R, InvolvedAgents)), World1),
   list_to_set(World1, World),
   subtract(World, Interactions, NotInteractions),
   (compound(IntType) ->
@@ -236,13 +236,13 @@ with_output_to(atom(IntTypeStr), maplist(write, Args))
      );
     (IntTypeStr = IntType)),
   string_concat(not, IntTypeStr, NotIntType),
-  retractall(match(_, NotIntType)),
-  asserta(match(Interaction, NotIntType) :- member(Interaction, NotInteractions)),
+  retractall(match(ProtocolName, _, NotIntType)),
+  asserta(match(ProtocolName, Interaction, NotIntType) :- member(Interaction, NotInteractions)),
   T1 = (NotIntType:T1) \/ epsilon,
   T2 = IntType:T2,
   TP = (T1 | (T2 /\ TP1)).
-pre_processing(var(X, T), TP, InvolvedAgents) :-
-  pre_processing(T, TP1, InvolvedAgents),
+pre_processing(var(X, T), TP, InvolvedAgents, ProtocolName) :-
+  pre_processing(T, TP1, InvolvedAgents, ProtocolName),
   TP = var(X, TP1).
 
 % fuse_partitions fuses the sets contained in the first argument list
@@ -497,7 +497,7 @@ decOne(P, ProtocolName) :-
   decOne(T, P, ProtocolName).
 decOne(T, P, ProtocolName) :-
   involved(T, InvolvedAgents, ProtocolName),
-  pre_processing(T, Test, InvolvedAgents), !, distribute(Test, P, ProtocolName).
+  pre_processing(T, Test, InvolvedAgents, ProtocolName), !, distribute(Test, P, ProtocolName).
 
 %%%%%%%%%%%
 % DecAMon %
@@ -696,7 +696,7 @@ is_monitoring_safe(Partition, T, ProtocolName) :-
   threshold(Threshold),
   filter_events(T, TFiltered, Threshold, ProtocolName),
   involved(TFiltered, InvolvedAgents, ProtocolName),
-  pre_processing(TFiltered, T1, InvolvedAgents), !,
+  pre_processing(TFiltered, T1, InvolvedAgents, ProtocolName), !,
   is_monitoring_safe(Partition, T1, Assoc, ProtocolName), !.
 
 is_monitoring_safe(_, epsilon, _, _) :- !.

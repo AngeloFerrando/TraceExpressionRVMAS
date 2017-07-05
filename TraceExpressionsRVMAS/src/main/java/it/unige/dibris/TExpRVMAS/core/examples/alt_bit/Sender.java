@@ -1,5 +1,8 @@
 package it.unige.dibris.TExpRVMAS.core.examples.alt_bit;
 
+import it.unige.dibris.TExpRVMAS.core.Channel;
+import it.unige.dibris.TExpRVMAS.core.Monitor;
+import it.unige.dibris.TExpRVMAS.core.SimulatedChannel;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -23,13 +26,19 @@ public class Sender extends Agent{
 				doWait(waitMilliseconds);
 				
 				ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+				msg.setSender(getAID());
 				msg.addReceiver(new AID(receiver, AID.ISLOCALNAME));
 		        msg.setContent(content);		    
 		        
 		        doWait(5000);
 		        
 		        System.out.println("[" + getLocalName() + "]: send " + content + " to " + receiver);
-		        send(msg);
+		        
+		        //SimulatedChannel ch = new SimulatedChannel("email", 0.8);
+		        Channel ch = Channel.getChannel("email");
+		        // supposing to send an email here!
+		        ch.sent(msg);
+		        //send(msg);
 		        
 		        //Monitor m = Monitor.getMyMonitor(getName());
 		        //m.addPerception(PerceptionFactory.createSimpleAction(Sender.this, "action1"));

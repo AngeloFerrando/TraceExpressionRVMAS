@@ -47,6 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jpl7.Query;
 
 import it.unige.dibris.TExpRVMAS.core.Callback;
+import it.unige.dibris.TExpRVMAS.core.Channel;
 import it.unige.dibris.TExpRVMAS.core.Monitor;
 import it.unige.dibris.TExpRVMAS.core.Perception;
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
@@ -231,7 +232,7 @@ public class Sniffer extends Monitor {
 
 					prolog_msg = MsgParser.format_message(local_epoch, tmp);
 					prolog_msg = prolog_msg.substring(0, prolog_msg.length() - 1) + ", " +
-							(ev instanceof SentMessage ? "s" : "r") + ")";
+							(ev instanceof SentMessage ? "s" : "r") + ", default)";
 					
 					log_file.println("\nConversion from Jade message");
 					log_file.println(tmp);
@@ -906,6 +907,24 @@ public class Sniffer extends Monitor {
 	@Override
 	public void setCallbackWhenFail(Callback callback) {
 		this.callback = callback;
+	}
+
+	@Override
+	public void addMessage(Channel channel, ACLMessage msg, boolean sent) {
+		if(!sent && getTraceExpression().areEventsAtomic()){
+			AID sender = msg.getSender();
+			// If the sender is currently under sniff, then the message was already
+			// displayed when the 'sent-message' event occurred --> just skip this message.
+			if(agentsUnderSniff.contains(new Agent(sender))) {
+				return;
+			}
+		}
+		String prolog_msg = MsgParser.format_message(local_epoch, msg);
+		prolog_msg = prolog_msg.substring(0, prolog_msg.length() - 1) + ", " +
+				(sent? "s" : "r") + ", " + channel.getName() + ")";
+		String t1 = "remember(" + monitorID + "," + prolog_msg + ")";
+		Query q1 = new Query(t1);
+		q1.hasSolution();
 	}
 
 } /* END of public class Sniffer */

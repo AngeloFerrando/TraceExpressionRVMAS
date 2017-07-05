@@ -246,7 +246,9 @@ accept(N,T1,[E|L],T3) :-
 
 is_contractive_aux(ProtocolName) :-
   trace_expression(ProtocolName, T),
-  is_contractive(T).
+  threshold(Threshold),
+  filter_events(T, TFiltered, Threshold, ProtocolName),
+  is_contractive(TFiltered).
 
 is_contractive(T) :-
   empty_assoc(A),
@@ -412,7 +414,7 @@ are_all_events_atomic(ProtocolName) :-
 
 are_all_events_atomic(epsilon, _).
 are_all_events_atomic(ET:T, ProtocolName) :-
-  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), (Type == s; Type == r)), []),
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type, _), (Type == s; Type == r)), []),
   are_all_events_atomic(T, ProtocolName), !.
   % term_string(ET, S),
   % split_string(S, "_", "", L),
@@ -424,7 +426,7 @@ are_all_events_atomic(T, ProtocolName) :-
   are_all_events_atomic(T1, ProtocolName),
   are_all_events_atomic(T2, ProtocolName), !.
 are_all_events_atomic(ET>>T, ProtocolName) :-
-  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), (Type == s; Type == r)), []),
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type, _), (Type == s; Type == r)), []),
   are_all_events_atomic(T, ProtocolName), !.
   % term_string(ET, S),
   % split_string(S, "_", "", L),
@@ -440,7 +442,7 @@ are_all_events_async(ProtocolName) :-
 
 are_all_events_async(epsilon, _).
 are_all_events_async(ET:T, ProtocolName) :-
-  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), var(Type)), []),
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type, _), var(Type)), []),
   are_all_events_async(T, ProtocolName), !.
   % term_string(ET, S),
   % split_string(S, "_", "", L),
@@ -451,7 +453,7 @@ are_all_events_async(T, ProtocolName) :-
   are_all_events_async(T1, ProtocolName),
   are_all_events_async(T2, ProtocolName), !.
 are_all_events_async(ET>>T, ProtocolName) :-
-  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type), var(Type)), []),
+  findall(E, (match(ProtocolName, E, ET), E = msg(_, _, _, _, Type, _), var(Type)), []),
   are_all_events_async(T, ProtocolName), !.
   % term_string(ET, S),
   % split_string(S, "_", "", L),
@@ -588,7 +590,9 @@ initialize(LogFileName, MonitorID, Agents, ProtocolName) :-
   % The argument of diff (milliseconds after which we assume that a message is "old" enough, and no older messages will arrive after) should be the same used by the progress agent to call the "progress" goal
   recorda(MonitorID, diff(0)),
   trace_expression(ProtocolName, T),
-  project(ProtocolName, T, Agents, ProjectedType),
+  threshold(Threshold),
+  filter_events(T, TFiltered, Threshold, ProtocolName),
+  project(ProtocolName, TFiltered, Agents, ProjectedType),
   clean_and_record(MonitorID, current_state(ProtocolName, ProjectedType)),
   clean_and_record(MonitorID, message_list([])),
   open(LogFileName,append,Str),

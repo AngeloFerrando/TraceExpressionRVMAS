@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import it.unige.dibris.TExpRVMAS.core.protocol.TraceExpression;
 import it.unige.dibris.TExpRVMAS.exception.JADEAgentInitializationException;
+import jade.lang.acl.ACLMessage;
 import jade.tools.ToolAgent;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
@@ -133,5 +134,7 @@ public abstract class Monitor extends ToolAgent {
 	}
 	
 	public abstract void setCallbackWhenFail(Callback callback);
+
+	public abstract void addMessage(Channel channel, ACLMessage msg, boolean sent);
 	
 }
