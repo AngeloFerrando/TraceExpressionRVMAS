@@ -214,7 +214,7 @@ pre_processing(T1|T2, TP1|TP2, InvolvedAgents, ProtocolName) :-
   pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
   pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
 pre_processing(T1*T2, TP1*TP2, InvolvedAgents, ProtocolName) :-
-  may_eventually_halt(T1), !,
+  may_eventually_halt(ProtocolName, T1), !,
   pre_processing(T1, TP1, InvolvedAgents, ProtocolName),
   pre_processing(T2, TP2, InvolvedAgents, ProtocolName).
 pre_processing(T1*_, TP1, InvolvedAgents, ProtocolName) :-

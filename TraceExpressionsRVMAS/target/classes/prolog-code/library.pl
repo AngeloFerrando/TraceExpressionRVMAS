@@ -77,15 +77,15 @@ does_not_halt(var(_, T)) :- !, does_not_halt(T).
 % may_halt predicate iterated on the trace expression
 % Example: T = msg1:epsilon, may_eventually_halt(T).
 % Example: T = msg1:T, not(may_eventually_halt(T)).
-may_eventually_halt(T) :-
+may_eventually_halt(ProtocolName, T) :-
   empty_assoc(A),
-  may_eventually_halt(T, A).
-may_eventually_halt(T, A) :-
+  may_eventually_halt(ProtocolName, T, A).
+may_eventually_halt(_, T, A) :-
   get_assoc(T, A, _), !, fail.
-may_eventually_halt(T, _) :- may_halt(T), !.
-may_eventually_halt(T, A) :-
+may_eventually_halt(_, T, _) :- may_halt(T), !.
+may_eventually_halt(ProtocolName, T, A) :-
   put_assoc(T, A, _, A1),
-  next(T, _, T1), may_eventually_halt(T1, A1).
+  next(ProtocolName, T, _, T1), may_eventually_halt(ProtocolName, T1, A1).
 
 %%% optimization
 fork(epsilon, T, T) :- !.
@@ -276,7 +276,9 @@ is_contractive(T1*T2, Depth, DeepestSeq, Assoc) :-
   put_assoc(T1*T2, Assoc, Depth, Assoc1),
   IncDepth is Depth + 1,
   is_contractive(T1, IncDepth, DeepestSeq, Assoc1),
-  is_contractive(T2, IncDepth, DeepestSeq, Assoc1).
+  ((may_halt(T1)) ->
+    (is_contractive(T2, IncDepth, DeepestSeq, Assoc1));
+    (is_contractive(T2, IncDepth, Depth, Assoc1))).
 is_contractive(T1/\T2, Depth, DeepestSeq, Assoc) :-
   put_assoc(T1/\T2, Assoc, Depth, Assoc1),
   IncDepth is Depth + 1,
@@ -547,7 +549,9 @@ project(ProtocolName, Assoc, Depth, DeepestSeq, (Type1*Type2), ProjectedAgents, 
 put_assoc((Type1*Type2),Assoc,(ProjectedType,Depth),NewAssoc),
 IncDepth is Depth+1,
 project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type1, ProjectedAgents, ProjectedType1),
-project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2),
+((may_halt(Type1))->
+  (project(ProtocolName, NewAssoc, IncDepth, DeepestSeq, Type2, ProjectedAgents, ProjectedType2));
+  (project(ProtocolName, NewAssoc, IncDepth, Depth, Type2, ProjectedAgents, ProjectedType2))),
 ProjectedType=(ProjectedType1*ProjectedType2).
 
 project(ProtocolName, Assoc, Depth, DeepestSeq, (IntType>>Type1), ProjectedAgents, ProjectedType) :-
